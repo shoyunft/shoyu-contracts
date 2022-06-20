@@ -339,31 +339,74 @@ export const seaportFixture = async (owner: Wallet) => {
       }
     }
 
-    for (const receivedItem of allReceivedItems as any[]) {
-      const duration = toBN(receivedItem.endTime).sub(receivedItem.startTime);
-      const elapsed = toBN(timestamp).sub(receivedItem.startTime);
-      const remaining = duration.sub(elapsed);
+    // aggregate expected and received balances for items of same token and recipient
+    const aggregatedReceivedItemBalances = (allReceivedItems as any[]).reduce(
+      (prev, cur) => {
+        const duration = toBN(cur.endTime).sub(cur.startTime);
+        const elapsed = toBN(timestamp).sub(cur.startTime);
+        const remaining = duration.sub(elapsed);
 
-      expect(
-        receivedItem.finalBalance.sub(receivedItem.initialBalance).toString()
-      ).to.equal(
-        toBN(receivedItem.startAmount)
-          .mul(remaining)
-          .add(toBN(receivedItem.endAmount).mul(elapsed))
-          .add(duration.sub(1))
-          .div(duration)
-          .mul(receivedItem.numerator)
-          .div(receivedItem.denominator)
-          .mul(multiplier)
-          .toString()
-      );
+        prev[cur.token + ":" + cur.recipient] = {
+          expectedTokenBalance: (
+            prev?.[cur.token + ":" + cur.recipient]?.expectedTokenBalance ??
+            toBN(0)
+          ).add(
+            toBN(cur.startAmount)
+              .mul(remaining)
+              .add(toBN(cur.endAmount).mul(elapsed))
+              .add(duration.sub(1))
+              .div(duration)
+              .mul(cur.numerator)
+              .div(cur.denominator)
+              .mul(multiplier)
+          ),
+          receivedTokenBalance: cur.finalBalance.sub(cur.initialBalance),
+        };
 
-      if (receivedItem.itemType === 2) {
-        // ERC721
-        expect(receivedItem.ownsItemBefore).to.equal(false);
-        expect(receivedItem.ownsItemAfter).to.equal(true);
-      }
-    }
+        if (cur.itemType === 2) {
+          // ERC721
+          expect(cur.ownsItemBefore).to.equal(false);
+          expect(cur.ownsItemAfter).to.equal(true);
+        }
+
+        return prev;
+      },
+      {}
+    );
+
+    Object.values(aggregatedReceivedItemBalances).forEach(
+      (aggregatedBalance: any) =>
+        expect(aggregatedBalance.receivedTokenBalance.toString()).to.equal(
+          aggregatedBalance.expectedTokenBalance.toString()
+        )
+    );
+
+    // This doesn't aggregate items of the same kind and recipient
+    // for (const receivedItem of allReceivedItems as any[]) {
+    //   const duration = toBN(receivedItem.endTime).sub(receivedItem.startTime);
+    //   const elapsed = toBN(timestamp).sub(receivedItem.startTime);
+    //   const remaining = duration.sub(elapsed);
+
+    //   expect(
+    //     receivedItem.finalBalance.sub(receivedItem.initialBalance).toString()
+    //   ).to.equal(
+    //     toBN(receivedItem.startAmount)
+    //       .mul(remaining)
+    //       .add(toBN(receivedItem.endAmount).mul(elapsed))
+    //       .add(duration.sub(1))
+    //       .div(duration)
+    //       .mul(receivedItem.numerator)
+    //       .div(receivedItem.denominator)
+    //       .mul(multiplier)
+    //       .toString()
+    //   );
+
+    //   if (receivedItem.itemType === 2) {
+    //     // ERC721
+    //     expect(receivedItem.ownsItemBefore).to.equal(false);
+    //     expect(receivedItem.ownsItemAfter).to.equal(true);
+    //   }
+    // }
 
     return receipt;
   };
@@ -395,6 +438,7 @@ export const seaportFixture = async (owner: Wallet) => {
     } else if ([3, 4].includes(itemType)) {
       const contract = new Contract(token, testERC1155.interface, provider);
       const operator = sender !== offerer ? sender : target;
+
       await expect(tx)
         .to.emit(contract, "TransferSingle")
         .withArgs(operator, offerer, recipient, identifier, amount);
@@ -470,27 +514,35 @@ export const seaportFixture = async (owner: Wallet) => {
 
       const marketplaceContractEvents = (receipt.events as any[])
         .filter((x) => x.address === marketplaceContract.address)
-        .map((x) => ({
-          eventName: x.event,
-          eventSignature: x.eventSignature,
-          orderHash: x.args.orderHash,
-          offerer: x.args.offerer,
-          zone: x.args.zone,
-          recipient: x.args.recipient,
-          offer: x.args.offer.map((y: any) => ({
-            itemType: y.itemType,
-            token: y.token,
-            identifier: y.identifier,
-            amount: y.amount,
-          })),
-          consideration: x.args.consideration.map((y: any) => ({
-            itemType: y.itemType,
-            token: y.token,
-            identifier: y.identifier,
-            amount: y.amount,
-            recipient: y.recipient,
-          })),
-        }))
+        .map((x) => {
+          const { args, name, signature } =
+            marketplaceContract.interface.parseLog({
+              data: x.data,
+              topics: x.topics,
+            });
+
+          return {
+            eventName: name,
+            eventSignature: signature,
+            orderHash: args.orderHash,
+            offerer: args.offerer,
+            zone: args.zone,
+            recipient: args.recipient,
+            offer: args.offer.map((y: any) => ({
+              itemType: y.itemType,
+              token: y.token,
+              identifier: y.identifier,
+              amount: y.amount,
+            })),
+            consideration: args.consideration.map((y: any) => ({
+              itemType: y.itemType,
+              token: y.token,
+              identifier: y.identifier,
+              amount: y.amount,
+              recipient: y.recipient,
+            })),
+          };
+        })
         .filter((x) => x.orderHash === orderHash);
 
       expect(marketplaceContractEvents.length).to.equal(1);
@@ -612,7 +664,7 @@ export const seaportFixture = async (owner: Wallet) => {
             {
               offerer,
               conduitKey,
-              target: receipt.to,
+              target: marketplaceContract.address, // TODO: could be zone too
             }
           );
         }

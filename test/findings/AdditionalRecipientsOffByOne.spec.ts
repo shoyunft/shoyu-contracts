@@ -15,7 +15,7 @@ import { network } from "hardhat";
 
 const IS_FIXED = true;
 
-describe("Additional recipients off by one error allows skipping second consideration", async () => {
+describe.skip("Additional recipients off by one error allows skipping second consideration", async () => {
   let alice: Wallet;
   let bob: Wallet;
   let carol: Wallet;

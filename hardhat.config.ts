@@ -1,14 +1,40 @@
 import * as dotenv from "dotenv";
 
-import { HardhatUserConfig, subtask } from "hardhat/config";
+import { HardhatUserConfig, subtask, task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-etherscan";
+import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-deploy";
+import "@tenderly/hardhat-tenderly";
 
 import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from "hardhat/builtin-tasks/task-names";
 
 dotenv.config();
+
+let accounts;
+
+if (process.env.PRIVATE_KEY) {
+  accounts = [process.env.PRIVATE_KEY];
+} else {
+  accounts = {
+    mnemonic:
+      process.env.MNEMONIC ||
+      "test test test test test test test test test test test junk",
+  };
+}
+
+// This is a sample Hardhat task. To learn how to create your own go to
+// https://hardhat.org/guides/create-task.html
+task("accounts", "Prints the list of accounts", async (args, { ethers }) => {
+  const accounts = await ethers.getSigners();
+
+  for (const account of accounts) {
+    console.log(await account.address);
+  }
+});
 
 // Filter Reference Contracts
 subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
@@ -32,6 +58,15 @@ const config: HardhatUserConfig = {
           optimizer: {
             enabled: true,
             runs: 19066,
+          },
+        },
+      },
+      {
+        version: "0.6.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
           },
         },
       },
@@ -59,10 +94,36 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
   networks: {
     hardhat: {
       blockGasLimit: 30_000_000,
       throwOnCallFailures: false,
+      allowUnlimitedContractSize: true,
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts,
+      chainId: 5,
+      live: true,
+      saveDeployments: true,
+      tags: ["staging"],
+    },
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+    alice: {
+      default: 1,
+    },
+    bob: {
+      default: 2,
+    },
+    carol: {
+      default: 3,
     },
   },
   gasReporter: {

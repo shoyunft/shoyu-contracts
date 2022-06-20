@@ -13,7 +13,7 @@ import { AdvancedOrder, OfferItem } from "../utils/types";
 
 const IS_FIXED = true;
 
-describe("Fulfillment applier allows overflow when a missing item is provided", async () => {
+describe.skip("Fulfillment applier allows overflow when a missing item is provided", async () => {
   let alice: Wallet;
   let bob: Wallet;
   let order: AdvancedOrder;

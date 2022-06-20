@@ -14,7 +14,7 @@ const { merkleTree } = require("../utils/criteria");
 
 const IS_FIXED = true;
 
-describe("Criteria resolver allows root hash to be given as a leaf", async () => {
+describe.skip("Criteria resolver allows root hash to be given as a leaf", async () => {
   let alice: Wallet;
   let bob: Wallet;
   let carol: Wallet;

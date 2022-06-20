@@ -47,7 +47,7 @@ const getCustomRevertSelector = (customErrorString) =>
     .keccak256(ethers.utils.toUtf8Bytes(customErrorString))
     .slice(0, 10);
 
-describe(`Consideration (version: ${VERSION}) — initial test suite`, function () {
+describe.skip(`Consideration (version: ${VERSION}) — initial test suite`, function () {
   const provider = ethers.provider;
   let zone;
   let marketplaceContract;
