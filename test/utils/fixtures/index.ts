@@ -305,41 +305,51 @@ export const seaportFixture = async (owner: Wallet) => {
 
     const { timestamp } = await provider.getBlock(receipt.blockHash);
 
-    for (const offeredItem of allOfferedItems as any[]) {
-      const duration = toBN(offeredItem.endTime).sub(offeredItem.startTime);
-      const elapsed = toBN(timestamp).sub(offeredItem.startTime);
-      const remaining = duration.sub(elapsed);
+    // // aggregate expected and received balances offer items of the same token and sender
+    const aggregatedOfferItemBalances = (allOfferedItems as any[]).reduce(
+      (prev, cur) => {
+        const duration = toBN(cur.endTime).sub(cur.startTime);
+        const elapsed = toBN(timestamp).sub(cur.startTime);
+        const remaining = duration.sub(elapsed);
 
-      if (offeredItem.itemType < 4) {
-        // TODO: criteria-based
-        if (!additionalPayouts) {
-          expect(
-            offeredItem.initialBalance.sub(offeredItem.finalBalance).toString()
-          ).to.equal(
-            toBN(offeredItem.startAmount)
-              .mul(remaining)
-              .add(toBN(offeredItem.endAmount).mul(elapsed))
-              .div(duration)
-              .mul(offeredItem.numerator)
-              .div(offeredItem.denominator)
-              .mul(multiplier)
-              .toString()
-          );
-        } else {
-          expect(
-            offeredItem.initialBalance.sub(offeredItem.finalBalance).toString()
-          ).to.equal(additionalPayouts.add(offeredItem.endAmount).toString());
+        prev[cur.token + ":" + cur.account] = {
+          expectedTokenBalance: toBN(
+            prev?.[cur.token + ":" + cur.account]?.expectedTokenBalance ?? 0
+          ).add(
+            !additionalPayouts
+              ? toBN(cur.startAmount)
+                  .mul(remaining)
+                  .add(toBN(cur.endAmount).mul(elapsed))
+                  .div(duration)
+                  .mul(cur.numerator)
+                  .div(cur.denominator)
+                  .mul(multiplier)
+              : additionalPayouts.add(cur.endAmount)
+          ),
+          receivedTokenBalance:
+            prev?.[cur.token + ":" + cur.account]?.receivedTokenBalance ??
+            cur.initialBalance.sub(cur.finalBalance),
+        };
+
+        if (cur.itemType === 2) {
+          // ERC721
+          expect(cur.ownsItemBefore).to.equal(true);
+          expect(cur.ownsItemAfter).to.equal(false);
         }
-      }
 
-      if (offeredItem.itemType === 2) {
-        // ERC721
-        expect(offeredItem.ownsItemBefore).to.equal(true);
-        expect(offeredItem.ownsItemAfter).to.equal(false);
-      }
-    }
+        return prev;
+      },
+      {}
+    );
 
-    // aggregate expected and received balances for items of same token and recipient
+    Object.values(aggregatedOfferItemBalances).forEach(
+      (aggregatedBalance: any) =>
+        expect(aggregatedBalance.receivedTokenBalance.toString()).to.equal(
+          aggregatedBalance.expectedTokenBalance.toString()
+        )
+    );
+
+    // aggregate expected and received balances for received items of same token and recipient
     const aggregatedReceivedItemBalances = (allReceivedItems as any[]).reduce(
       (prev, cur) => {
         const duration = toBN(cur.endTime).sub(cur.startTime);
@@ -360,7 +370,9 @@ export const seaportFixture = async (owner: Wallet) => {
               .div(cur.denominator)
               .mul(multiplier)
           ),
-          receivedTokenBalance: cur.finalBalance.sub(cur.initialBalance),
+          receivedTokenBalance:
+            prev?.[cur.token + ":" + cur.recipient]?.receivedTokenBalance ??
+            cur.finalBalance.sub(cur.initialBalance),
         };
 
         if (cur.itemType === 2) {
@@ -380,6 +392,41 @@ export const seaportFixture = async (owner: Wallet) => {
           aggregatedBalance.expectedTokenBalance.toString()
         )
     );
+
+    // This doesn't aggregate items of the same kind and address
+    // for (const offeredItem of allOfferedItems as any[]) {
+    //   const duration = toBN(offeredItem.endTime).sub(offeredItem.startTime);
+    //   const elapsed = toBN(timestamp).sub(offeredItem.startTime);
+    //   const remaining = duration.sub(elapsed);
+
+    //   if (offeredItem.itemType < 4) {
+    //     // TODO: criteria-based
+    //     if (!additionalPayouts) {
+    //       expect(
+    //         offeredItem.initialBalance.sub(offeredItem.finalBalance).toString()
+    //       ).to.equal(
+    //         toBN(offeredItem.startAmount)
+    //           .mul(remaining)
+    //           .add(toBN(offeredItem.endAmount).mul(elapsed))
+    //           .div(duration)
+    //           .mul(offeredItem.numerator)
+    //           .div(offeredItem.denominator)
+    //           .mul(multiplier)
+    //           .toString()
+    //       );
+    //     } else {
+    //       expect(
+    //         offeredItem.initialBalance.sub(offeredItem.finalBalance).toString()
+    //       ).to.equal(additionalPayouts.add(offeredItem.endAmount).toString());
+    //     }
+    //   }
+
+    //   if (offeredItem.itemType === 2) {
+    //     // ERC721
+    //     expect(offeredItem.ownsItemBefore).to.equal(true);
+    //     expect(offeredItem.ownsItemAfter).to.equal(false);
+    //   }
+    // }
 
     // This doesn't aggregate items of the same kind and recipient
     // for (const receivedItem of allReceivedItems as any[]) {
