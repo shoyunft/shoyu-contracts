@@ -8,7 +8,6 @@ async function transfer(
   amount: BigNumberish
 ) {
   const WETH = await ethers.getContract("TestWETH");
-
   if (token.address === WETH.address) {
     await token.connect(signer).deposit({ value: amount });
   } else {
@@ -34,10 +33,6 @@ export const seedSushiswapPools = deployments.createFixture(
     }: HardhatRuntimeEnvironment,
     options: { pairs: Pair[] } | undefined
   ) => {
-    await deployments.fixture(["Shoyu"], {
-      keepExistingDeployments: true,
-    });
-
     if (!options) return;
 
     const { pairs } = options;

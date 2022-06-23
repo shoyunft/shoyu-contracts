@@ -20,19 +20,21 @@ contract Shoyu is IShoyu, TokenSwapper {
         address _seaport,
         address _weth,
         address _factory,
-        bytes32 _pairCodeHash
-    ) TokenSwapper(_factory, _pairCodeHash, _weth) {
+        bytes32 _pairCodeHash,
+        address _conduitController
+    ) TokenSwapper(_factory, _pairCodeHash, _weth, _conduitController) {
         seaport = _seaport;
     }
 
     function swapForETHAndFulfillOrders(
         SwapExactOutDetails[] memory swapDetails,
-        bytes memory fulfillmentData
+        bytes memory fulfillmentData,
+        bytes32 conduitKey
     ) external payable override {
         uint256 ethBefore = address(this).balance - msg.value;
 
         // Transfers tokens from `msg.sender` and swaps for ETH
-        uint256 ethAvailable = _performSwapsForETH(swapDetails) + msg.value;
+        uint256 ethAvailable = _performSwapsForETH(swapDetails, conduitKey) + msg.value;
 
         (bool success, bytes memory resp) = seaport.call{value: ethAvailable}(fulfillmentData);
 

@@ -7,6 +7,10 @@ import "../../lib/TokenTransferrer.sol";
 
 import { SwapExactOutDetails } from "./ShoyuStructs.sol";
 import { pairFor, sortTokens, getAmountsIn } from "./LibSushi.sol";
+import { ConduitControllerInterface } from "../../interfaces/ConduitControllerInterface.sol";
+import { ConduitTransfer } from "../../conduit/lib/ConduitStructs.sol";
+import { ConduitInterface } from "../../interfaces/ConduitInterface.sol";
+import { ConduitItemType } from "../../conduit/lib/ConduitEnums.sol";
 
 contract TokenSwapper is TokenTransferrer {
     /// @dev The UniswapV2Factory address.
@@ -15,15 +19,29 @@ contract TokenSwapper is TokenTransferrer {
     bytes32 private immutable pairCodeHash;
     /// @dev WETH address
     address private immutable WETH;
+    // Allow for interaction with the conduit controller.
+    ConduitControllerInterface private immutable _CONDUIT_CONTROLLER;
+    // Cache the conduit creation hash used by the conduit controller.
+    bytes32 private immutable _CONDUIT_CREATION_CODE_HASH;
 
     constructor(
         address _factory,
         bytes32 _pairCodeHash,
-        address _weth
+        address _weth,
+        address _conduitController
     ) {
         factory = _factory;
         pairCodeHash = _pairCodeHash;
         WETH = _weth;
+        // Get the conduit creation code hash from the supplied conduit
+        // controller and set it as an immutable.
+        ConduitControllerInterface conduitController = ConduitControllerInterface(
+            _conduitController
+        );
+        (_CONDUIT_CREATION_CODE_HASH, ) = conduitController.getConduitCodeHashes();
+
+        // Set the supplied conduit controller as an immutable.
+        _CONDUIT_CONTROLLER = conduitController;
     }
 
     function _performERC20TransferAndSwap(
@@ -31,7 +49,8 @@ contract TokenSwapper is TokenTransferrer {
         uint256 amountOut,
         uint256 amountInMax,
         address[] memory path,
-        address to
+        address to,
+        bytes32 conduitKey
     ) internal returns (uint256 amountIn) {
         uint256[] memory amounts = getAmountsIn(
             factory,
@@ -43,23 +62,39 @@ contract TokenSwapper is TokenTransferrer {
 
         require(amountIn <= amountInMax, '_performERC20TransferAndSwap/EXCESSIVE_AMOUNT_IN');
 
-        _performERC20Transfer(
-            path[0],  // token
-            from,     // from
-            pairFor(
-                factory,
+        if (conduitKey == bytes32(0)) {
+            _performERC20Transfer(
+                path[0],  // token
+                from,     // from
+                pairFor(
+                    factory,
+                    path[0],
+                    path[1],
+                    pairCodeHash
+                ),          // to
+                amountIn  // amount
+            );
+        } else {
+            _performERC20TransferWithConduit(
                 path[0],
-                path[1],
-                pairCodeHash
-            ),          // to
-            amountIn  // amount
-        );
+                from,
+                pairFor(
+                    factory,
+                    path[0],
+                    path[1],
+                    pairCodeHash
+                ),
+                amountIn,
+                conduitKey
+            );
+        }
 
         _swap(amounts, path, to);
     }
 
     function _performSwapsForETH(
-        SwapExactOutDetails[] memory swapDetails
+        SwapExactOutDetails[] memory swapDetails,
+        bytes32 conduitKey
     ) internal returns (uint256 ethAmount) {
         for (uint256 i = 0; i < swapDetails.length; i++) {
             require(
@@ -68,25 +103,74 @@ contract TokenSwapper is TokenTransferrer {
             );
 
             if (swapDetails[i].path.length == 1) {
-                _performERC20Transfer(
-                    WETH,
-                    msg.sender,
-                    address(this),
-                    swapDetails[i].amountOut
-                );
+                if (conduitKey == bytes32(0)) {
+                    _performERC20Transfer(
+                        WETH,
+                        msg.sender,
+                        address(this),
+                        swapDetails[i].amountOut
+                    );
+                } else {
+                    _performERC20TransferWithConduit(
+                        WETH,
+                        msg.sender,
+                        address(this),
+                        swapDetails[i].amountOut,
+                        conduitKey
+                    );
+                }
             } else {
                 _performERC20TransferAndSwap(
                     msg.sender,
                     swapDetails[i].amountOut,
                     swapDetails[i].amountInMax,
                     swapDetails[i].path,
-                    address(this)
+                    address(this),
+                    conduitKey
                 );
             }
 
             ethAmount = ethAmount + swapDetails[i].amountOut;
         }
         IWETH(WETH).withdraw(ethAmount);
+    }
+
+    function _performERC20TransferWithConduit(
+        address token,
+        address from,
+        address to,
+        uint256 amount,
+        bytes32 conduitKey
+    ) internal returns (uint256 ethAmount) {
+        // Derive the conduit address from the deployer, conduit key
+        // and creation code hash.
+        address conduit = address(
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            address(_CONDUIT_CONTROLLER),
+                            conduitKey,
+                            _CONDUIT_CREATION_CODE_HASH
+                        )
+                    )
+                )
+            )
+        );
+
+        ConduitTransfer[] memory conduitTransfers = new ConduitTransfer[](1);
+        conduitTransfers[0] = ConduitTransfer(
+            ConduitItemType.ERC20,
+            token,
+            from,
+            to,
+            0,
+            amount
+        );
+
+        // Call the conduit and execute transfer.
+        ConduitInterface(conduit).execute(conduitTransfers);
     }
 
     // requires the initial amount to have already been sent to the first pair

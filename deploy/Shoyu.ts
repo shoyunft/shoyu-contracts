@@ -5,6 +5,10 @@ import {
 } from "@sushiswap/core-sdk";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import {
+  CONDUIT_CONTROLLER_ADDRESS,
+  SEAPORT_ADDRESS,
+} from "../constants/addresses";
 
 const deployFunction: DeployFunction = async function ({
   ethers,
@@ -20,7 +24,7 @@ const deployFunction: DeployFunction = async function ({
 
   const chainId = Number(await getChainId());
 
-  let wethAddress, pairCodeHash, sushiswapFactory;
+  let wethAddress, pairCodeHash, sushiswapFactory, seaport;
 
   if (chainId === 31337) {
     wethAddress = (await deployments.get("TestWETH")).address;
@@ -49,7 +53,11 @@ const deployFunction: DeployFunction = async function ({
     throw Error("No INIT_CODE_HASH!");
   }
 
-  const seaport = await ethers.getContract("Seaport");
+  if (chainId in SEAPORT_ADDRESS) {
+    seaport = await ethers.getContractAt("Seaport", SEAPORT_ADDRESS[chainId]);
+  } else {
+    seaport = await deployments.get("Seaport");
+  }
 
   const shoyu = await deploy("Shoyu", {
     from: deployer,
@@ -58,6 +66,7 @@ const deployFunction: DeployFunction = async function ({
       wethAddress,
       sushiswapFactory.address,
       pairCodeHash,
+      CONDUIT_CONTROLLER_ADDRESS[chainId],
     ],
   });
 

@@ -9,6 +9,7 @@ import {
 interface IShoyu {
     function swapForETHAndFulfillOrders(
         SwapExactOutDetails[] calldata swapDetails,
-        bytes calldata fulfillmentData
+        bytes calldata fulfillmentData,
+        bytes32 conduitKey
     ) payable external;
 }

@@ -36,40 +36,37 @@ export const marketplaceFixture = async (
   chainId: number,
   owner: Wallet
 ) => {
-  const directMarketplaceContract = await ethers.getContract("Seaport");
-  const marketplaceContractAddress = directMarketplaceContract.address;
-
   // Deploy marketplace contract through efficient create2 factory
-  // const marketplaceContractFactory = await ethers.getContractFactory(
-  //   process.env.REFERENCE ? "ReferenceConsideration" : "Seaport"
-  // );
+  const marketplaceContractFactory = await ethers.getContractFactory(
+    process.env.REFERENCE ? "ReferenceConsideration" : "Seaport"
+  );
 
-  // const directMarketplaceContract = await deployContract(
-  //   process.env.REFERENCE ? "ReferenceConsideration" : "Consideration",
-  //   owner as any,
-  //   conduitController.address
-  // );
+  const directMarketplaceContract = await deployContract(
+    process.env.REFERENCE ? "ReferenceConsideration" : "Consideration",
+    owner as any,
+    conduitController.address
+  );
 
-  // const marketplaceContractAddress = await create2Factory.findCreate2Address(
-  //   deployConstants.MARKETPLACE_CONTRACT_CREATION_SALT,
-  //   marketplaceContractFactory.bytecode +
-  //     conduitController.address.slice(2).padStart(64, "0")
-  // );
+  const marketplaceContractAddress = await create2Factory.findCreate2Address(
+    deployConstants.MARKETPLACE_CONTRACT_CREATION_SALT,
+    marketplaceContractFactory.bytecode +
+      conduitController.address.slice(2).padStart(64, "0")
+  );
 
-  // let { gasLimit } = await ethers.provider.getBlock("latest");
+  let { gasLimit } = await ethers.provider.getBlock("latest");
 
-  // if ((hre as any).__SOLIDITY_COVERAGE_RUNNING) {
-  //   gasLimit = ethers.BigNumber.from(300_000_000);
-  // }
+  if ((hre as any).__SOLIDITY_COVERAGE_RUNNING) {
+    gasLimit = ethers.BigNumber.from(300_000_000);
+  }
 
-  // await create2Factory.safeCreate2(
-  //   deployConstants.MARKETPLACE_CONTRACT_CREATION_SALT,
-  //   marketplaceContractFactory.bytecode +
-  //     conduitController.address.slice(2).padStart(64, "0"),
-  //   {
-  //     gasLimit,
-  //   }
-  // );
+  await create2Factory.safeCreate2(
+    deployConstants.MARKETPLACE_CONTRACT_CREATION_SALT,
+    marketplaceContractFactory.bytecode +
+      conduitController.address.slice(2).padStart(64, "0"),
+    {
+      gasLimit,
+    }
+  );
 
   const marketplaceContract = (await ethers.getContractAt(
     process.env.REFERENCE ? "ReferenceConsideration" : "Seaport",

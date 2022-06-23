@@ -18,6 +18,7 @@ import {
   toKey,
 } from "../utils/encoding";
 import { deployContract } from "../utils/contracts";
+import { shoyuFixture } from "./fixtures/shoyuFixture";
 
 describe(`Shoyu exchange test suite`, function () {
   const provider = ethers.provider;
@@ -36,8 +37,8 @@ describe(`Shoyu exchange test suite`, function () {
   let stubZone: any;
   let conduitController: any;
   let conduitImplementation;
-  let conduitOne;
-  let conduitKeyOne;
+  let conduitOne: any;
+  let conduitKeyOne: any;
   let directMarketplaceContract: Contract;
   let mintAndApproveERC20: any;
   let getTestItem20: any;
@@ -50,7 +51,7 @@ describe(`Shoyu exchange test suite`, function () {
   let mintAndApprove1155: any;
   let getTestItem1155WithCriteria;
   let getTestItem1155: any;
-  let deployNewConduit;
+  let deployNewConduit: any;
   let createTransferWithApproval;
   let createOrder: any;
   let createMirrorBuyNowOrder: any;
@@ -77,10 +78,6 @@ describe(`Shoyu exchange test suite`, function () {
   });
 
   before(async () => {
-    await deployments.fixture(["DeployShoyu"]);
-
-    shoyuContract = await ethers.getContract("Shoyu");
-
     owner = new ethers.Wallet(randomHex(32), provider);
 
     await Promise.all(
@@ -121,7 +118,11 @@ describe(`Shoyu exchange test suite`, function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    testWETH = await ethers.getContract("TestWETH");
+    ({ shoyuContract, testWETH } = await shoyuFixture(
+      owner,
+      marketplaceContract,
+      conduitController
+    ));
   });
 
   describe("Shoyu tests", async () => {
@@ -465,7 +466,8 @@ describe(`Shoyu exchange test suite`, function () {
             marketplaceContract.interface.encodeFunctionData(
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
-            )
+            ),
+            toKey(false)
           );
           const receipt = await (await tx).wait();
 
@@ -521,7 +523,66 @@ describe(`Shoyu exchange test suite`, function () {
             marketplaceContract.interface.encodeFunctionData(
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
-            )
+            ),
+            toKey(false)
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys listed ERC721 by swapping ERC20 -> ETH (with conduit)", async () => {
+        await conduitController
+          .connect(owner)
+          .updateChannel(conduitOne.address, shoyuContract.address, true);
+
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(buyer, conduitOne.address, parseEther("5"));
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+            [
+              {
+                path: [testERC20.address, testWETH.address],
+                amountInMax: MaxUint256,
+                amountOut: value,
+              },
+            ],
+            marketplaceContract.interface.encodeFunctionData(
+              "fulfillAdvancedOrder",
+              [order, [], toKey(false), buyer.address]
+            ),
+            conduitKeyOne
           );
           const receipt = await (await tx).wait();
 
@@ -584,7 +645,8 @@ describe(`Shoyu exchange test suite`, function () {
             marketplaceContract.interface.encodeFunctionData(
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
-            )
+            ),
+            toKey(false)
           );
           const receipt = await (await tx).wait();
 
@@ -642,6 +704,7 @@ describe(`Shoyu exchange test suite`, function () {
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
             ),
+            toKey(false),
             {
               value: value.div(2),
             }
@@ -754,7 +817,8 @@ describe(`Shoyu exchange test suite`, function () {
                 buyer.address,
                 2,
               ]
-            )
+            ),
+            toKey(false)
           );
 
           const receipt = await (await tx).wait();
@@ -875,6 +939,7 @@ describe(`Shoyu exchange test suite`, function () {
                 2,
               ]
             ),
+            toKey(false),
             {
               value: totalValue.div(2),
             }
@@ -944,7 +1009,8 @@ describe(`Shoyu exchange test suite`, function () {
             marketplaceContract.interface.encodeFunctionData(
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
-            )
+            ),
+            toKey(false)
           );
           const receipt = await (await tx).wait();
 
@@ -1047,7 +1113,8 @@ describe(`Shoyu exchange test suite`, function () {
                   buyer.address,
                   2,
                 ]
-              )
+              ),
+              toKey(false)
             );
 
           const receipt = await (await tx).wait();
@@ -1136,7 +1203,8 @@ describe(`Shoyu exchange test suite`, function () {
             marketplaceContract.interface.encodeFunctionData(
               "fulfillAdvancedOrder",
               [order, [], toKey(false), buyer.address]
-            )
+            ),
+            toKey(false)
           )
         ).to.be.reverted;
       });
