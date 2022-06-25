@@ -2,11 +2,11 @@ import { BigNumber, constants, Contract, Wallet } from "ethers";
 import { deployments, ethers, network } from "hardhat";
 import { MaxUint256 } from "@ethersproject/constants";
 import { expect } from "chai";
-import { Interface, parseEther } from "ethers/lib/utils";
+import { defaultAbiCoder, Interface, parseEther } from "ethers/lib/utils";
 
 import IUNISWAPV2_ABI from "@sushiswap/core/build/abi/IUniswapV2Pair.json";
 
-import { seedSushiswapPools } from "./fixtures/seedSushiswapPools";
+import { seedSushiswapPools } from "./utils/fixtures/seedSushiswapPools";
 import { faucet } from "../utils/impersonate";
 import { seaportFixture } from "../utils/fixtures";
 import {
@@ -18,11 +18,17 @@ import {
   toKey,
 } from "../utils/encoding";
 import { deployContract } from "../utils/contracts";
-import { shoyuFixture } from "./fixtures/shoyuFixture";
+import { shoyuFixture } from "./utils/fixtures/shoyuFixture";
+import {
+  ACTION_LEGACY_SWAP_EXACT_OUT,
+  ACTION_SEAPORT_FULFILLMENT,
+  TokenSource,
+} from "./utils/contsants";
 
 describe(`Shoyu exchange test suite`, function () {
   const provider = ethers.provider;
   let shoyuContract: Contract;
+  let transformationAdapter: Contract;
   let zone: Wallet;
   let marketplaceContract: Contract;
   let testERC20: Contract;
@@ -118,7 +124,7 @@ describe(`Shoyu exchange test suite`, function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    ({ shoyuContract, testWETH } = await shoyuFixture(
+    ({ shoyuContract, testWETH, transformationAdapter } = await shoyuFixture(
       owner,
       marketplaceContract,
       conduitController
@@ -455,19 +461,27 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value,
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           );
           const receipt = await (await tx).wait();
 
@@ -512,19 +526,24 @@ describe(`Shoyu exchange test suite`, function () {
           .approve(shoyuContract.address, MaxUint256);
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testWETH.address],
-                amountInMax: value,
-                amountOut: value,
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           );
           const receipt = await (await tx).wait();
 
@@ -570,19 +589,27 @@ describe(`Shoyu exchange test suite`, function () {
         await mintAndApproveERC20(buyer, conduitOne.address, parseEther("5"));
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value,
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            conduitKeyOne
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.CONDUIT, // tokenSource
+                  conduitKeyOne, // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           );
           const receipt = await (await tx).wait();
 
@@ -634,19 +661,27 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value,
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           );
           const receipt = await (await tx).wait();
 
@@ -692,19 +727,27 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value.div(2),
-              },
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value.div(2), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
             ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false),
             {
               value: value.div(2),
             }
@@ -797,28 +840,38 @@ describe(`Shoyu exchange test suite`, function () {
           ],
         ].map(toFulfillmentComponents);
 
+        const totalValue = value0.add(value1);
+
         await withBalanceChecks([order0, order1], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, totalValue],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value0.add(value1),
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAvailableAdvancedOrders",
-              [
-                [order0, order1],
-                [],
-                offerComponents,
-                considerationComponents,
-                toKey(false),
-                buyer.address,
-                2,
-              ]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  totalValue, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAvailableAdvancedOrders",
+                [
+                  [order0, order1],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(false),
+                  buyer.address,
+                  2,
+                ]
+              ),
+            ]
           );
 
           const receipt = await (await tx).wait();
@@ -919,27 +972,35 @@ describe(`Shoyu exchange test suite`, function () {
         const totalValue = value0.add(value1);
 
         await withBalanceChecks([order0, order1], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, totalValue],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: totalValue.div(2),
-              },
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  totalValue.div(2), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAvailableAdvancedOrders",
+                [
+                  [order0, order1],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(false),
+                  buyer.address,
+                  2,
+                ]
+              ),
             ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAvailableAdvancedOrders",
-              [
-                [order0, order1],
-                [],
-                offerComponents,
-                considerationComponents,
-                toKey(false),
-                buyer.address,
-                2,
-              ]
-            ),
-            toKey(false),
             {
               value: totalValue.div(2),
             }
@@ -998,19 +1059,27 @@ describe(`Shoyu exchange test suite`, function () {
         const buyerETHBalanceBefore = await provider.getBalance(buyer.address);
 
         await withBalanceChecks([order], 0, null, async () => {
-          const tx = shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value.add(42069),
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value.add(42069), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           );
           const receipt = await (await tx).wait();
 
@@ -1092,16 +1161,22 @@ describe(`Shoyu exchange test suite`, function () {
         const totalValue = order0.value.add(order1.value);
 
         await withBalanceChecks([order0.order], 0, null, async () => {
-          const tx = await shoyuContract
-            .connect(buyer)
-            .swapForETHAndFulfillOrders(
-              [
-                {
-                  path: [testERC20.address, testWETH.address],
-                  amountInMax: MaxUint256,
-                  amountOut: totalValue,
-                },
-              ],
+          const tx = await shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, totalValue],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  totalValue, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
               marketplaceContract.interface.encodeFunctionData(
                 "fulfillAvailableAdvancedOrders",
                 [
@@ -1114,8 +1189,8 @@ describe(`Shoyu exchange test suite`, function () {
                   2,
                 ]
               ),
-              toKey(false)
-            );
+            ]
+          );
 
           const receipt = await (await tx).wait();
 
@@ -1192,19 +1267,27 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         await expect(
-          shoyuContract.connect(buyer).swapForETHAndFulfillOrders(
+          shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
             [
-              {
-                path: [testERC20.address, testWETH.address],
-                amountInMax: MaxUint256,
-                amountOut: value,
-              },
-            ],
-            marketplaceContract.interface.encodeFunctionData(
-              "fulfillAdvancedOrder",
-              [order, [], toKey(false), buyer.address]
-            ),
-            toKey(false)
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                  true, // unwrapNativeToken
+                ]
+              ),
+              marketplaceContract.interface.encodeFunctionData(
+                "fulfillAdvancedOrder",
+                [order, [], toKey(false), buyer.address]
+              ),
+            ]
           )
         ).to.be.reverted;
       });

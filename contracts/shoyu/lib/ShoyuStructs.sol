@@ -17,3 +17,9 @@ struct SwapExactInDetails {
     uint256 amountIn;
     uint256 amountOutMin;
 }
+
+struct Adapter {
+    address adapterAddress;
+    bool isLibrary;
+    bool isActive;
+}

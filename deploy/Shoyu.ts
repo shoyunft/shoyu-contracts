@@ -1,4 +1,5 @@
 import {
+  BENTOBOX_ADDRESS,
   FACTORY_ADDRESS,
   INIT_CODE_HASH,
   WNATIVE_ADDRESS,
@@ -24,7 +25,7 @@ const deployFunction: DeployFunction = async function ({
 
   const chainId = Number(await getChainId());
 
-  let wethAddress, pairCodeHash, sushiswapFactory, seaport;
+  let wethAddress, pairCodeHash, sushiswapFactory, seaport, bentobox;
 
   if (chainId === 31337) {
     wethAddress = (await deployments.get("TestWETH")).address;
@@ -53,21 +54,42 @@ const deployFunction: DeployFunction = async function ({
     throw Error("No INIT_CODE_HASH!");
   }
 
+  if (chainId === 31337) {
+    bentobox = await ethers.getContract("BentoBoxV1");
+  } else if (chainId in BENTOBOX_ADDRESS) {
+    bentobox = await ethers.getContractAt(
+      "BentoBoxV1",
+      BENTOBOX_ADDRESS[chainId]
+    );
+  } else {
+    throw Error("No BENTOBOX!");
+  }
+
   if (chainId in SEAPORT_ADDRESS) {
     seaport = await ethers.getContractAt("Seaport", SEAPORT_ADDRESS[chainId]);
   } else {
     seaport = await deployments.get("Seaport");
   }
 
-  const shoyu = await deploy("Shoyu", {
+  const transformationAdapter = await deploy("TransformationAdapter", {
     from: deployer,
     args: [
-      seaport.address,
       wethAddress,
       sushiswapFactory.address,
       pairCodeHash,
       CONDUIT_CONTROLLER_ADDRESS[chainId],
+      bentobox.address,
     ],
+  });
+
+  const adapterRegistry = await deploy("AdapterRegistry", {
+    from: deployer,
+    args: [2, [transformationAdapter.address, seaport.address], [true, false]],
+  });
+
+  const shoyu = await deploy("Shoyu", {
+    from: deployer,
+    args: [adapterRegistry.address],
   });
 
   console.log("Shoyu deployed at address", shoyu.address);

@@ -1,4 +1,3 @@
-import { WNATIVE_ADDRESS } from "@sushiswap/core-sdk";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -14,17 +13,7 @@ const deployFunction: DeployFunction = async function ({
 
   const { deployer } = await getNamedAccounts();
 
-  const chainId = Number(await getChainId());
-
-  let wethAddress;
-
-  if (chainId === 31337) {
-    wethAddress = (await deployments.get("TestWETH")).address;
-  } else if (chainId in WNATIVE_ADDRESS) {
-    wethAddress = WNATIVE_ADDRESS[chainId];
-  } else {
-    throw Error("No WNATIVE!");
-  }
+  const weth = await deployments.get("TestWETH");
 
   const sushiswapFactory = await deploy("UniswapV2Factory", {
     from: deployer,
@@ -33,9 +22,15 @@ const deployFunction: DeployFunction = async function ({
 
   const sushiswapRouter = await deploy("UniswapV2Router02", {
     from: deployer,
-    args: [sushiswapFactory.address, wethAddress],
+    args: [sushiswapFactory.address, weth.address],
   });
 
+  const bentobox = await deploy("BentoBoxV1", {
+    from: deployer,
+    args: [weth.address],
+  });
+
+  console.log("Bentobox deployed at ", bentobox.address);
   console.log("Sushiswap factory deployed at ", sushiswapFactory.address);
   console.log("Sushiswap router deployed at ", sushiswapRouter.address);
 };

@@ -5,11 +5,12 @@ import {
     SwapExactOutDetails,
     OrderDetails
 } from "../lib/ShoyuStructs.sol";
+import { TokenSource } from "../lib/ShoyuEnums.sol";
 
 interface IShoyu {
-    function swapForETHAndFulfillOrders(
-        SwapExactOutDetails[] calldata swapDetails,
-        bytes calldata fulfillmentData,
-        bytes32 conduitKey
+    function cook(
+        uint8[] memory actions,
+        uint256[] memory values,
+        bytes[] memory datas
     ) payable external;
 }

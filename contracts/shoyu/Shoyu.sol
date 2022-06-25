@@ -1,50 +1,56 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import "@sushiswap/core/contracts/uniswapv2/interfaces/IWETH.sol";
-
 import "./interfaces/IShoyu.sol";
-import "./lib/TokenSwapper.sol";
+import "./lib/AdapterRegistry.sol";
 
-import {
-    AdvancedOrder,
-    CriteriaResolver,
-    FulfillmentComponent
-} from "../lib/ConsiderationStructs.sol";
-import { ConsiderationInterface } from "../interfaces/ConsiderationInterface.sol";
+contract Shoyu is IShoyu {
+    AdapterRegistry public adapterRegistry;
 
-contract Shoyu is IShoyu, TokenSwapper {
-    address private immutable seaport;
-
-    constructor(
-        address _seaport,
-        address _weth,
-        address _factory,
-        bytes32 _pairCodeHash,
-        address _conduitController
-    ) TokenSwapper(_factory, _pairCodeHash, _weth, _conduitController) {
-        seaport = _seaport;
+    constructor(address _adapterRegistery) {
+        adapterRegistry = AdapterRegistry(_adapterRegistery);
     }
 
-    function swapForETHAndFulfillOrders(
-        SwapExactOutDetails[] memory swapDetails,
-        bytes memory fulfillmentData,
-        bytes32 conduitKey
-    ) external payable override {
-        uint256 ethBefore = address(this).balance - msg.value;
+    function cook(
+        uint8[] memory adapterIds,
+        uint256[] memory values,
+        bytes[] memory datas
+    ) public payable override {
+        uint256 length = adapterIds.length;
+        for (uint256 i; i < length; i = ++i) {
+            (
+                address adapterAddress,
+                bool isLibrary,
+                bool isActive
+            ) = adapterRegistry.adapters(adapterIds[i]);
 
-        // Transfers tokens from `msg.sender` and swaps for ETH
-        uint256 ethAvailable = _performSwapsForETH(swapDetails, conduitKey) + msg.value;
+            require(isActive, "cook: inactive adapter");
 
-        (bool success, bytes memory resp) = seaport.call{value: ethAvailable}(fulfillmentData);
+            (bool success, ) = isLibrary ? adapterAddress.delegatecall(datas[i])
+                : adapterAddress.call{value: values[i]}(datas[i]);
 
-        require(success, "ORDER_NOT_FILLED");
+            if (!success) {
+                assembly {
+                    returndatacopy(0, 0, returndatasize())
+                    revert(0, returndatasize())
+                }
+            }
+        }
 
-        uint256 ethAfter = address(this).balance;
-
-        require(ethAfter >= ethBefore, "CANNOT_USE_PREEXISTING_ETH_BALANCE");
-
-        _transferEth(payable(msg.sender), ethAfter - ethBefore);
+        // refund excess ETH
+        assembly {
+            if gt(selfbalance(), 0) {
+                let callStatus := call(
+                    gas(),
+                    caller(),
+                    selfbalance(),
+                    0,
+                    0,
+                    0,
+                    0
+                )
+            }
+        }
     }
 
     /// @dev Fallback for just receiving ether.
