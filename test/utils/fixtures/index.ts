@@ -473,6 +473,7 @@ export const seaportFixture = async (owner: Wallet) => {
     } = item;
     const identifier = id1 || id2;
     const sender = getTransferSender(offerer, conduitKey);
+
     if ([1, 2, 5].includes(itemType)) {
       const contract = new Contract(
         token,
@@ -560,7 +561,17 @@ export const seaportFixture = async (owner: Wallet) => {
       const remaining = duration.sub(elapsed);
 
       const marketplaceContractEvents = (receipt.events as any[])
-        .filter((x) => x.address === marketplaceContract.address)
+        .filter((x) => {
+          try {
+            marketplaceContract.interface.parseLog({
+              data: x.data,
+              topics: x.topics,
+            });
+            return true;
+          } catch (e) {
+            return false;
+          }
+        })
         .map((x) => {
           const { args, name, signature } =
             marketplaceContract.interface.parseLog({

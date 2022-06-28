@@ -2,11 +2,12 @@
 pragma solidity >=0.8.7;
 
 import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
+import "@rari-capital/solmate/src/tokens/ERC20.sol";
 
 import "../Transfer/ConduitAdapter.sol";
 import "../Transfer/TransferAdapter.sol";
 import { SwapExactOutDetails } from "../../lib/ShoyuStructs.sol";
-import { pairFor, sortTokens, getAmountsIn } from "../../lib/LibSushi.sol";
+import { pairFor, sortTokens, getAmountsIn, getAmountsOut } from "../../lib/LibSushi.sol";
 import { TokenSource } from "../../lib/ShoyuEnums.sol";
 
 contract LegacySwapAdapter is TransferAdapter {
@@ -25,6 +26,7 @@ contract LegacySwapAdapter is TransferAdapter {
         pairCodeHash = _pairCodeHash;
     }
 
+    // transfers funds from msg.sender and performs swap
     function _legacySwapExactOut(
         uint256 amountOut,
         uint256 amountInMax,
@@ -43,7 +45,7 @@ contract LegacySwapAdapter is TransferAdapter {
 
         require(amountIn <= amountInMax, '_legacySwapExactOut/EXCESSIVE_AMOUNT_IN');
 
-        _transferERC20(
+        transferERC20From(
             path[0],
             pairFor(
                 factory,
@@ -54,6 +56,36 @@ contract LegacySwapAdapter is TransferAdapter {
             amountIn,
             tokenSource,
             transferData
+        );
+
+        _swap(amounts, path, to);
+    }
+
+    // requires path[0] to have already been sent to shoyuContract
+    function _legacySwapExactIn(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] memory path,
+        address to
+    ) internal returns (uint256 amountOut) {
+        uint256[] memory amounts = getAmountsOut(
+            factory,
+            amountIn,
+            path,
+            pairCodeHash
+        );
+        amountOut = amounts[amounts.length - 1];
+
+        require(amountOut >= amountOutMin, "insufficient-amount-out");
+
+        ERC20(path[0]).transfer(
+            pairFor(
+                factory,
+                path[0],
+                path[1],
+                pairCodeHash
+            ),
+            amountIn
         );
 
         _swap(amounts, path, to);

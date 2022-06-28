@@ -24,11 +24,13 @@ import {
   ACTION_SEAPORT_FULFILLMENT,
   TokenSource,
 } from "./utils/contsants";
+import { shoyu } from "../../typechain-types/contracts";
 
 describe(`Shoyu exchange test suite`, function () {
   const provider = ethers.provider;
   let shoyuContract: Contract;
   let transformationAdapter: Contract;
+  let seaportAdapter: Contract;
   let zone: Wallet;
   let marketplaceContract: Contract;
   let testERC20: Contract;
@@ -124,11 +126,8 @@ describe(`Shoyu exchange test suite`, function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    ({ shoyuContract, testWETH, transformationAdapter } = await shoyuFixture(
-      owner,
-      marketplaceContract,
-      conduitController
-    ));
+    ({ shoyuContract, testWETH, transformationAdapter, seaportAdapter } =
+      await shoyuFixture(owner, marketplaceContract, conduitController));
   });
 
   describe("Shoyu tests", async () => {
@@ -379,7 +378,7 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         const offer = [
-          getTestItem20(parseEther("1"), parseEther("1"), undefined),
+          getTestItem20(parseEther("1"), parseEther("1")),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
 
@@ -477,10 +476,13 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           );
           const receipt = await (await tx).wait();
@@ -539,10 +541,13 @@ describe(`Shoyu exchange test suite`, function () {
                   "0x", // transferData
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           );
           const receipt = await (await tx).wait();
@@ -605,10 +610,13 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           );
           const receipt = await (await tx).wait();
@@ -677,10 +685,13 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           );
           const receipt = await (await tx).wait();
@@ -743,10 +754,13 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ],
             {
               value: value.div(2),
@@ -859,18 +873,21 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0, order1],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                totalValue,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAvailableAdvancedOrders",
+                  [
+                    [order0, order1],
+                    [],
+                    offerComponents,
+                    considerationComponents,
+                    toKey(false),
+                    buyer.address,
+                    2,
+                  ]
+                ),
+              ]),
             ]
           );
 
@@ -988,18 +1005,21 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0, order1],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                totalValue,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAvailableAdvancedOrders",
+                  [
+                    [order0, order1],
+                    [],
+                    offerComponents,
+                    considerationComponents,
+                    toKey(false),
+                    buyer.address,
+                    2,
+                  ]
+                ),
+              ]),
             ],
             {
               value: totalValue.div(2),
@@ -1075,12 +1095,16 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           );
+
           const receipt = await (await tx).wait();
 
           const buyerETHBalanceAfter = await provider.getBalance(buyer.address);
@@ -1177,18 +1201,21 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0.order, order1.order],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                totalValue,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAvailableAdvancedOrders",
+                  [
+                    [order0.order, order1.order],
+                    [],
+                    offerComponents,
+                    considerationComponents,
+                    toKey(false),
+                    buyer.address,
+                    2,
+                  ]
+                ),
+              ]),
             ]
           );
 
@@ -1229,6 +1256,130 @@ describe(`Shoyu exchange test suite`, function () {
               fulfiller: buyer.address,
             },
           ]);
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> ETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [
+          getTestItem20(parseEther("1"), parseEther("1")),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [0, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  marketplaceContract.interface.encodeFunctionData(
+                    "fulfillAdvancedOrder",
+                    [order, [], toKey(false), shoyuContract.address]
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "swapExactIn",
+                [
+                  parseEther("1"), // amountIn
+                  BigNumber.from(0), // amountOutMin
+                  [testERC20.address, testWETH.address], // path
+                  seller.address, // to
+                  true, // unwrapNativeToken
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const lpInterface = new Interface(IUNISWAPV2_ABI);
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                lpInterface.decodeEventLog("Swap", event.data, event.topics);
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              lpInterface.decodeEventLog("Swap", event.data, event.topics)
+            )[0];
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amount0Out)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
           return receipt;
         });
       });
@@ -1283,10 +1434,13 @@ describe(`Shoyu exchange test suite`, function () {
                   true, // unwrapNativeToken
                 ]
               ),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
-              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
             ]
           )
         ).to.be.reverted;

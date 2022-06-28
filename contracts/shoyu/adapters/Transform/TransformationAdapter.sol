@@ -23,23 +23,46 @@ contract TransformationAdapter is LegacySwapAdapter {
         address payable to,
         TokenSource tokenSource,
         bytes memory transferData,
-        bool unwrapNativeToken
+        bool unwrapNative
     ) public payable {
         _legacySwapExactOut(
             amountOut,
             amountInMax,
             path,
-            unwrapNativeToken ? address(this) : to,
+            unwrapNative ? address(this) : to,
             tokenSource,
             transferData
         );
 
-        if (unwrapNativeToken) {
+        if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
                 _transferEth(to, amountOut);
             }
         }
+    }
+
+    function swapExactIn(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] memory path,
+        address payable to,
+        bool unwrapNative
+    ) public payable {
+        uint256 amountOut = _legacySwapExactIn(
+            amountIn,
+            amountOutMin,
+            path,
+            unwrapNative ? address(this) : to
+        );
+
+        if (unwrapNative) {
+            IWETH(WETH).withdraw(amountOut);
+            if (to != address(this)) {
+                _transferEth(to, amountOut);
+            }
+        }
+
     }
 
     function unwrapNativeToken(
@@ -48,7 +71,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         TokenSource tokenSource,
         bytes memory transferData
     ) public payable {
-        _transferERC20(
+        transferERC20From(
             WETH,
             address(this),
             amount,

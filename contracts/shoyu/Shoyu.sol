@@ -5,7 +5,7 @@ import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 
 contract Shoyu is IShoyu {
-    AdapterRegistry public adapterRegistry;
+    AdapterRegistry public immutable adapterRegistry;
 
     constructor(address _adapterRegistery) {
         adapterRegistry = AdapterRegistry(_adapterRegistery);

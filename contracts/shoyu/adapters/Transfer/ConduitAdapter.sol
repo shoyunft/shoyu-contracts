@@ -61,4 +61,42 @@ contract ConduitAdapter {
         // Call the conduit and execute transfer.
         ConduitInterface(conduit).execute(conduitTransfers);
     }
+
+    function _performERC721TransferWithConduit(
+        address token,
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes32 conduitKey
+    ) internal {
+        // Derive the conduit address from the deployer, conduit key
+        // and creation code hash.
+        address conduit = address(
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            bytes1(0xff),
+                            address(_CONDUIT_CONTROLLER),
+                            conduitKey,
+                            _CONDUIT_CREATION_CODE_HASH
+                        )
+                    )
+                )
+            )
+        );
+
+        ConduitTransfer[] memory conduitTransfers = new ConduitTransfer[](1);
+        conduitTransfers[0] = ConduitTransfer(
+            ConduitItemType.ERC721,
+            token,
+            from,
+            to,
+            tokenId,
+            1
+        );
+
+        // Call the conduit and execute transfer.
+        ConduitInterface(conduit).execute(conduitTransfers);
+    }
 }
