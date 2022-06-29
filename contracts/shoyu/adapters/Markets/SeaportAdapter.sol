@@ -16,7 +16,8 @@ contract SeaportAdapter {
         uint256 ethAmount,
         bytes memory data
     ) public payable returns (bool success, bytes memory returnData) {
-        for (uint256 i; i < tokensToApprove.length; ++i) {
+        uint256 length = tokensToApprove.length;
+        for (uint256 i; i < length; ++i) {
             if (!ERC721(tokensToApprove[i]).isApprovedForAll(address(this), seaportAddress)) {
                 ERC721(tokensToApprove[i]).setApprovalForAll(seaportAddress, true);
             }
