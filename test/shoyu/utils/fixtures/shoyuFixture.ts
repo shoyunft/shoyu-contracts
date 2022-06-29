@@ -44,7 +44,8 @@ export const shoyuFixture = async (
   const shoyuContract = await deployContract(
     "Shoyu",
     owner as any,
-    adapterRegistry.address
+    adapterRegistry.address,
+    bentobox.address
   );
 
   return {
@@ -52,5 +53,6 @@ export const shoyuFixture = async (
     testWETH,
     transformationAdapter,
     seaportAdapter,
+    bentobox,
   };
 };

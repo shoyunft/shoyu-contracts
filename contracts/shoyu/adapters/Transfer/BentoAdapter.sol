@@ -2,7 +2,8 @@
 
 pragma solidity >=0.8.11;
 
-import "../../interfaces/IBentoBoxMinimal.sol";
+import "@rari-capital/solmate/src/tokens/ERC20.sol";
+import "../../../sushiswap/IBentoBoxMinimal.sol";
 
 /// @title BentoAdapter
 /// @notice Adapter which provides all functions of BentoBox require by this contract.
@@ -13,7 +14,22 @@ abstract contract BentoAdapter {
 
     constructor(address _bentoBox) {
         bentoBox = IBentoBoxMinimal(_bentoBox);
-        bentoBox.registerProtocol();
+    }
+
+    // deposits funds from address(this) into bentobox
+    function depositToBentoBox(
+        bool approve,
+        address token,
+        address to,
+        uint256 amount,
+        uint256 share,
+        uint256 value
+    ) public {
+        if (approve) {
+            ERC20(token).approve(address(bentoBox), type(uint256).max);
+        }
+
+        bentoBox.deposit{value: value}(token, address(this), to, amount, share);
     }
 
     /// @notice Deposits the token from users wallet into the BentoBox.

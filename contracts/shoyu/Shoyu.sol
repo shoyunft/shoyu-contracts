@@ -3,12 +3,14 @@ pragma solidity >=0.8.13;
 
 import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
+import "../sushiswap/IBentoBoxMinimal.sol";
 
 contract Shoyu is IShoyu {
     AdapterRegistry public immutable adapterRegistry;
 
-    constructor(address _adapterRegistery) {
+    constructor(address _adapterRegistery, address _bentobox) {
         adapterRegistry = AdapterRegistry(_adapterRegistery);
+        IBentoBoxMinimal(_bentobox).registerProtocol();
     }
 
     function cook(

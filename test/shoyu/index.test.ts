@@ -1,8 +1,13 @@
 import { BigNumber, constants, Contract, Wallet } from "ethers";
 import { deployments, ethers, network } from "hardhat";
-import { MaxUint256 } from "@ethersproject/constants";
+import { MaxUint256, AddressZero } from "@ethersproject/constants";
 import { expect } from "chai";
-import { defaultAbiCoder, Interface, parseEther } from "ethers/lib/utils";
+import {
+  defaultAbiCoder,
+  Interface,
+  parseEther,
+  splitSignature,
+} from "ethers/lib/utils";
 
 import IUNISWAPV2_ABI from "@sushiswap/core/build/abi/IUniswapV2Pair.json";
 
@@ -24,12 +29,14 @@ import {
   ACTION_SEAPORT_FULFILLMENT,
   TokenSource,
 } from "./utils/contsants";
+import { signBentoMasterContractApproval } from "./utils/helpers";
 
 describe(`Shoyu exchange test suite`, function () {
   const provider = ethers.provider;
   let shoyuContract: Contract;
   let transformationAdapter: Contract;
   let seaportAdapter: Contract;
+  let bentobox: Contract;
   let zone: Wallet;
   let marketplaceContract: Contract;
   let testERC20: Contract;
@@ -125,8 +132,13 @@ describe(`Shoyu exchange test suite`, function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    ({ shoyuContract, testWETH, transformationAdapter, seaportAdapter } =
-      await shoyuFixture(owner, marketplaceContract, conduitController));
+    ({
+      shoyuContract,
+      testWETH,
+      transformationAdapter,
+      seaportAdapter,
+      bentobox,
+    } = await shoyuFixture(owner, marketplaceContract, conduitController));
   });
 
   describe("Shoyu tests", async () => {
@@ -473,6 +485,96 @@ describe(`Shoyu exchange test suite`, function () {
                   TokenSource.WALLET, // tokenSource
                   "0x", // transferData
                   true, // unwrapNativeToken
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                marketplaceContract.interface.encodeFunctionData(
+                  "fulfillAdvancedOrder",
+                  [order, [], toKey(false), buyer.address]
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys listed ERC721 in ETH with WETH in bentobox", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // by paying with WETH from bentobox
+        await bentobox
+          .connect(buyer)
+          .deposit(
+            AddressZero,
+            buyer.address,
+            buyer.address,
+            parseEther("2"),
+            0,
+            {
+              value: parseEther("2"),
+            }
+          );
+
+        const { v, r, s } = await signBentoMasterContractApproval(
+          bentobox,
+          buyer,
+          shoyuContract.address
+        );
+
+        await bentobox
+          .connect(buyer)
+          .setMasterContractApproval(
+            buyer.address,
+            shoyuContract.address,
+            true,
+            v,
+            r,
+            s
+          );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [0, value],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                  TokenSource.BENTO, // tokenSource
+                  toKey(true), // transferData
                 ]
               ),
               seaportAdapter.interface.encodeFunctionData("fulfill", [
@@ -1769,6 +1871,262 @@ describe(`Shoyu exchange test suite`, function () {
                 offerer: shoyuContract.address,
                 conduitKey: toKey(false),
                 operator: marketplaceContract.address,
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 for ERC20 and deposits in bentobox", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [
+          getTestItem20(parseEther("1"), parseEther("1")),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and deposits received ERC20 in bentobox
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [0, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  marketplaceContract.interface.encodeFunctionData(
+                    "fulfillAdvancedOrder",
+                    [order, [], toKey(false), shoyuContract.address]
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "depositToBentoBox",
+                [
+                  true,
+                  testERC20.address, // token
+                  seller.address, // to
+                  parseEther("1"), // amount
+                  0, // share
+                  0, // value
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const bentoDepositEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                bentobox.interface.decodeEventLog(
+                  "LogDeposit",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              bentobox.interface.decodeEventLog(
+                "LogDeposit",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          expect(bentoDepositEvent.amount.toString()).to.eq(
+            parseEther("1").toString()
+          );
+
+          const sellerBentoBalance = await bentobox.balanceOf(
+            testERC20.address,
+            seller.address
+          );
+
+          expect(sellerBentoBalance.toString()).to.eq(
+            parseEther("1").toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 for ERC20 (with conduit) and deposits in bentobox", async () => {
+        const nftId = await mintAndApprove721(seller, conduitOne.address);
+
+        await conduitController
+          .connect(owner)
+          .updateChannel(conduitOne.address, shoyuContract.address, true);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [
+          getTestItem20(parseEther("1"), parseEther("1")),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and deposits received ERC20 in bentobox
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [0, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.CONDUIT,
+                  conduitKeyOne,
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  marketplaceContract.interface.encodeFunctionData(
+                    "fulfillAdvancedOrder",
+                    [order, [], toKey(false), shoyuContract.address]
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "depositToBentoBox",
+                [
+                  true,
+                  testERC20.address, // token
+                  seller.address, // to
+                  parseEther("1"), // amount
+                  0, // share
+                  0, // value
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const bentoDepositEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                bentobox.interface.decodeEventLog(
+                  "LogDeposit",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              bentobox.interface.decodeEventLog(
+                "LogDeposit",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          expect(bentoDepositEvent.amount.toString()).to.eq(
+            parseEther("1").toString()
+          );
+
+          const sellerBentoBalance = await bentobox.balanceOf(
+            testERC20.address,
+            seller.address
+          );
+
+          expect(sellerBentoBalance.toString()).to.eq(
+            parseEther("1").toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
               },
             ]
           );
