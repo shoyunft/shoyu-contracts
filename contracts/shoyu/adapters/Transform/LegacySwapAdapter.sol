@@ -61,7 +61,7 @@ contract LegacySwapAdapter is TransferAdapter {
         _swap(amounts, path, to);
     }
 
-    // requires path[0] to have already been sent to shoyuContract
+    // requires path[0] to have already been sent to address(this)
     function _legacySwapExactIn(
         uint256 amountIn,
         uint256 amountOutMin,
@@ -76,7 +76,7 @@ contract LegacySwapAdapter is TransferAdapter {
         );
         amountOut = amounts[amounts.length - 1];
 
-        require(amountOut >= amountOutMin, "insufficient-amount-out");
+        require(amountOut >= amountOutMin, "_legacySwapExactIn/EXCESSIVE_AMOUNT_OUT");
 
         ERC20(path[0]).transfer(
             pairFor(

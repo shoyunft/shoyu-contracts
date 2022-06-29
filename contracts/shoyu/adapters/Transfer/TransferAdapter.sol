@@ -85,6 +85,38 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         }
     }
 
+    function transferERC1155From(
+        address token,
+        address to,
+        uint256 tokenId,
+        uint256 amount,
+        TokenSource source,
+        bytes memory data
+    ) public {
+        if (source == TokenSource.WALLET) {
+            _performERC1155Transfer(
+                token,
+                msg.sender,
+                to,
+                tokenId,
+                amount
+            );
+        } else if (source == TokenSource.CONDUIT) {
+           bytes32 conduitKey = abi.decode(data, (bytes32));
+
+           _performERC1155TransferWithConduit(
+                token,
+                msg.sender,
+                to,
+                tokenId,
+                amount,
+                conduitKey
+            );
+        } else {
+            revert("transferERC1155From/INVALID_TOKEN_SOURCE");
+        }
+    }
+
     /// @dev Transfers some amount of ETH to the given recipient and
     ///      reverts if the transfer fails.
     /// @param recipient The recipient of the ETH.

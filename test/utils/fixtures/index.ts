@@ -512,11 +512,12 @@ export const seaportFixture = async (owner: Wallet) => {
 
     if (standardExecutions && standardExecutions.length) {
       for (const standardExecution of standardExecutions) {
-        const { item, offerer, conduitKey } = standardExecution;
+        const { item, offerer, conduitKey, operator } = standardExecution;
+
         await checkTransferEvent(tx, item, {
           offerer,
           conduitKey,
-          target: receipt.to,
+          target: operator ?? receipt.to,
         });
       }
 

@@ -55,4 +55,26 @@ contract Shoyu is IShoyu {
 
     /// @dev Fallback for just receiving ether.
     receive() external payable {}
+
+    /// @dev Allows this contract to receive ERC1155 tokens
+    ///      TODO: is this required for ERC721 too?
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) public virtual returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) public virtual returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
 }
