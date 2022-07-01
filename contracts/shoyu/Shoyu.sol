@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
 
-contract Shoyu is IShoyu, Ownable {
+contract Shoyu is IShoyu, Ownable, Pausable {
     AdapterRegistry public immutable adapterRegistry;
 
     constructor(address _adapterRegistery, address _bentobox) {
@@ -19,7 +20,7 @@ contract Shoyu is IShoyu, Ownable {
         uint8[] calldata adapterIds,
         uint256[] calldata values,
         bytes[] calldata datas
-    ) external payable override {
+    ) external payable override whenNotPaused {
         uint256 length = adapterIds.length;
         for (uint256 i; i < length; ++i) {
             (
