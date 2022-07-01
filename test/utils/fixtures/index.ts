@@ -176,9 +176,12 @@ export const seaportFixture = async (owner: Wallet) => {
           offeredItem.itemType
         ].balanceOf(offeredItem.account, offeredItem.identifierOrCriteria);
       } else if (offeredItem.itemType < 4) {
-        offeredItem.initialBalance = await tokenByType[
-          offeredItem.itemType
-        ].balanceOf(offeredItem.account);
+        const token = new Contract(
+          offeredItem.token,
+          tokenByType[offeredItem.itemType].interface,
+          provider
+        );
+        offeredItem.initialBalance = await token.balanceOf(offeredItem.account);
       }
 
       if (offeredItem.itemType === 2) {
@@ -209,9 +212,14 @@ export const seaportFixture = async (owner: Wallet) => {
           receivedItem.itemType
         ].balanceOf(receivedItem.recipient, receivedItem.identifierOrCriteria);
       } else {
-        receivedItem.initialBalance = await tokenByType[
-          receivedItem.itemType
-        ].balanceOf(receivedItem.recipient);
+        const token = new Contract(
+          receivedItem.token,
+          tokenByType[receivedItem.itemType].interface,
+          provider
+        );
+        receivedItem.initialBalance = await token.balanceOf(
+          receivedItem.recipient
+        );
       }
 
       if (receivedItem.itemType === 2) {
@@ -258,9 +266,12 @@ export const seaportFixture = async (owner: Wallet) => {
         ].balanceOf(offeredItem.account, offeredItem.identifierOrCriteria);
       } else if (offeredItem.itemType < 3) {
         // TODO: criteria-based
-        offeredItem.finalBalance = await tokenByType[
-          offeredItem.itemType
-        ].balanceOf(offeredItem.account);
+        const token = new Contract(
+          offeredItem.token,
+          tokenByType[offeredItem.itemType].interface,
+          provider
+        );
+        offeredItem.finalBalance = await token.balanceOf(offeredItem.account);
       }
 
       if (offeredItem.itemType === 2) {
@@ -289,9 +300,14 @@ export const seaportFixture = async (owner: Wallet) => {
           receivedItem.itemType
         ].balanceOf(receivedItem.recipient, receivedItem.identifierOrCriteria);
       } else {
-        receivedItem.finalBalance = await tokenByType[
-          receivedItem.itemType
-        ].balanceOf(receivedItem.recipient);
+        const token = new Contract(
+          receivedItem.token,
+          tokenByType[receivedItem.itemType].interface,
+          provider
+        );
+        receivedItem.finalBalance = await token.balanceOf(
+          receivedItem.recipient
+        );
       }
 
       if (receivedItem.itemType === 2) {
@@ -305,7 +321,7 @@ export const seaportFixture = async (owner: Wallet) => {
 
     const { timestamp } = await provider.getBlock(receipt.blockHash);
 
-    // // aggregate expected and received balances offer items of the same token and sender
+    // aggregate expected and received balances offer items of the same token and sender
     const aggregatedOfferItemBalances = (allOfferedItems as any[]).reduce(
       (prev, cur) => {
         const duration = toBN(cur.endTime).sub(cur.startTime);
@@ -630,7 +646,7 @@ export const seaportFixture = async (owner: Wallet) => {
           orderItem.itemType > 3 ? orderItem.itemType - 2 : orderItem.itemType
         );
         expect(item.token).to.equal(orderItem.token);
-        expect(item.token).to.equal(tokenByType[item.itemType].address);
+        // expect(item.token).to.equal(tokenByType[item.itemType].address);
         if (orderItem.itemType < 4) {
           // no criteria-based
           expect(item.identifier).to.equal(orderItem.identifierOrCriteria);
@@ -742,9 +758,16 @@ export const seaportFixture = async (owner: Wallet) => {
           // ERC20
           // search for transfer
           const transferLogs = (tokenEvents || [])
-            .map((x) => testERC20.interface.parseLog(x))
+            .map((x) => {
+              try {
+                return testERC20.interface.parseLog(x);
+              } catch (e) {
+                return null;
+              }
+            })
             .filter(
               (x) =>
+                x &&
                 x.signature === "Transfer(address,address,uint256)" &&
                 x.args.from === event.offerer &&
                 (recipient !== constants.AddressZero
@@ -834,9 +857,16 @@ export const seaportFixture = async (owner: Wallet) => {
           // ERC20
           // search for transfer
           const transferLogs = (tokenEvents || [])
-            .map((x) => testERC20.interface.parseLog(x))
+            .map((x) => {
+              try {
+                return testERC20.interface.parseLog(x);
+              } catch (e) {
+                return null;
+              }
+            })
             .filter(
               (x) =>
+                x &&
                 x.signature === "Transfer(address,address,uint256)" &&
                 x.args.to === consideration.recipient
             );

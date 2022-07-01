@@ -1,9 +1,8 @@
-// // // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.11;
 
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 
-// TODO: is Ownable & setSeaportAddress
 contract SeaportAdapter {
     address public immutable seaportAddress;
 
@@ -12,10 +11,10 @@ contract SeaportAdapter {
     }
 
     function approveBeforeFulfill (
-        address[] memory tokensToApprove,
+        address[] calldata tokensToApprove,
         uint256 ethAmount,
-        bytes memory data
-    ) public payable returns (bool success, bytes memory returnData) {
+        bytes calldata data
+    ) external payable returns (bool success, bytes memory returnData) {
         uint256 length = tokensToApprove.length;
         for (uint256 i; i < length; ++i) {
             if (!ERC721(tokensToApprove[i]).isApprovedForAll(address(this), seaportAddress)) {
@@ -35,8 +34,8 @@ contract SeaportAdapter {
 
     function fulfill (
         uint256 ethAmount,
-        bytes memory data
-    ) public payable returns (bool success, bytes memory returnData) {
+        bytes calldata data
+    ) external payable returns (bool success, bytes memory returnData) {
         (success, returnData) = seaportAddress.call{value: ethAmount}(data);
 
         if (!success) {

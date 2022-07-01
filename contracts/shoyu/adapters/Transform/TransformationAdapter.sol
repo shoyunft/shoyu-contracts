@@ -16,6 +16,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         WETH = _weth;
     }
 
+    // transfers funds from msg.sender & performs swaps
     function swapExactOut(
         uint256 amountOut,
         uint256 amountInMax,
@@ -42,6 +43,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         }
     }
 
+    // requires path[0] to have been sent to address(this)
     function swapExactIn(
         uint256 amountIn,
         uint256 amountOutMin,
@@ -65,22 +67,19 @@ contract TransformationAdapter is LegacySwapAdapter {
 
     }
 
+    // requires WETH to have been sent to address(this)
     function unwrapNativeToken(
         uint256 amount,
-        address payable to,
-        TokenSource tokenSource,
-        bytes memory transferData
+        address payable to
     ) public payable {
-        transferERC20From(
-            WETH,
-            address(this),
-            amount,
-            tokenSource,
-            transferData
-        );
         IWETH(WETH).withdraw(amount);
         if (to != address(this)) {
             _transferEth(to, amount);
         }
+    }
+
+    // requires ETH to have been sent to address(this)
+    function wrapNativeToken(uint256 amount) public payable {
+        IWETH(WETH).deposit{value: amount}();
     }
 }

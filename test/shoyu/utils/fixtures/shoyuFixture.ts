@@ -1,4 +1,5 @@
 import { Contract, Signer } from "ethers";
+import { MaxUint256 } from "@ethersproject/constants";
 import { deployments, ethers } from "hardhat";
 import { deployContract } from "../../../utils/contracts";
 
@@ -46,6 +47,12 @@ export const shoyuFixture = async (
     owner as any,
     adapterRegistry.address,
     bentobox.address
+  );
+
+  await shoyuContract.approveERC20(
+    testWETH.address,
+    seaport.address,
+    MaxUint256
   );
 
   return {

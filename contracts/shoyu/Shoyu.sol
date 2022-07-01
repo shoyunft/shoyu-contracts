@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
 
-contract Shoyu is IShoyu {
+contract Shoyu is IShoyu, Ownable {
     AdapterRegistry public immutable adapterRegistry;
 
     constructor(address _adapterRegistery, address _bentobox) {
@@ -14,12 +16,12 @@ contract Shoyu is IShoyu {
     }
 
     function cook(
-        uint8[] memory adapterIds,
-        uint256[] memory values,
-        bytes[] memory datas
-    ) public payable override {
+        uint8[] calldata adapterIds,
+        uint256[] calldata values,
+        bytes[] calldata datas
+    ) external payable override {
         uint256 length = adapterIds.length;
-        for (uint256 i; i < length; i = ++i) {
+        for (uint256 i; i < length; ++i) {
             (
                 address adapterAddress,
                 bool isLibrary,
@@ -53,6 +55,14 @@ contract Shoyu is IShoyu {
                 )
             }
         }
+    }
+
+    function approveERC20(
+        address token,
+        address operator,
+        uint256 amount
+    ) external onlyOwner {
+        ERC20(token).approve(operator, amount);
     }
 
     /// @dev Fallback for just receiving ether.
