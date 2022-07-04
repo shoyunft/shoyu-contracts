@@ -4,6 +4,8 @@ pragma solidity >=0.8.13;
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
+import "@rari-capital/solmate/src/tokens/ERC721.sol";
+import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
@@ -42,19 +44,20 @@ contract Shoyu is IShoyu, Ownable, Pausable {
             }
         }
 
-        // refund excess ETH
+        _refundExcessETH();
+    }
+
+    function _transferETH(address to, uint256 amount) internal {
         assembly {
-            if gt(selfbalance(), 0) {
-                let callStatus := call(
-                    gas(),
-                    caller(),
-                    selfbalance(),
-                    0,
-                    0,
-                    0,
-                    0
-                )
-            }
+            let success := call(gas(), to, amount, 0, 0, 0, 0)
+            if eq(success, 0) { revert(0, 0) }
+        }
+    }
+
+    function _refundExcessETH() internal {
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            _transferETH(msg.sender, balance);
         }
     }
 
@@ -64,6 +67,34 @@ contract Shoyu is IShoyu, Ownable, Pausable {
         uint256 amount
     ) external onlyOwner {
         ERC20(token).approve(operator, amount);
+    }
+
+    function retrieveETH(address to, uint256 amount) onlyOwner external {
+        _transferETH(to, amount);
+    }
+
+    function retrieveERC20(address token, address to, uint256 amount) onlyOwner external {
+        ERC20(token).transfer(to, amount);
+    }
+
+    function retrieveERC721(
+        address token,
+        uint256[] calldata tokenIds,
+        address to
+    ) onlyOwner external {
+        uint256 length = tokenIds.length;
+        for (uint256 i; i < length; ++i) {
+            ERC721(token).safeTransferFrom(address(this), to, tokenIds[i]);
+        }
+    }
+
+    function retrieveERC1155(
+        address token,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        address to
+    ) onlyOwner external {
+        ERC1155(token).safeBatchTransferFrom(address(this), to, tokenIds, amounts, "");
     }
 
     /// @dev Fallback for just receiving ether.

@@ -119,14 +119,14 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
 
     /// @dev Transfers some amount of ETH to the given recipient and
     ///      reverts if the transfer fails.
-    /// @param recipient The recipient of the ETH.
+    /// @param to The recipient of the ETH.
     /// @param amount The amount of ETH to transfer.
-    function _transferEth(address payable recipient, uint256 amount)
+    function _transferEth(address payable to, uint256 amount)
         internal
     {
-        if (amount > 0) {
-            (bool success,) = recipient.call{value: amount}("");
-            require(success, "_transferEth/TRANSFER_FAILED");
+        assembly {
+            let success := call(gas(), to, amount, 0, 0, 0, 0)
+            if eq(success, 0) { revert(0, 0) }
         }
     }
 }
