@@ -4,6 +4,7 @@ import {
   INIT_CODE_HASH,
   WNATIVE_ADDRESS,
 } from "@sushiswap/core-sdk";
+import { upgrades } from "hardhat";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
@@ -19,7 +20,7 @@ const deployFunction: DeployFunction = async function ({
 }: HardhatRuntimeEnvironment) {
   console.log("Running Shoyu deploy script");
 
-  const { deploy } = deployments;
+  const { deploy, save } = deployments;
 
   const { deployer } = await getNamedAccounts();
 
@@ -80,23 +81,40 @@ const deployFunction: DeployFunction = async function ({
       CONDUIT_CONTROLLER_ADDRESS[chainId],
       bentobox.address,
     ],
+    log: true,
   });
 
   const adapterRegistry = await deploy("AdapterRegistry", {
     from: deployer,
     args: [2, [transformationAdapter.address, seaport.address], [true, false]],
+    log: true,
   });
 
-  const shoyu = await deploy("Shoyu", {
-    from: deployer,
-    args: [adapterRegistry.address],
-  });
+  try {
+    const shoyu = await deployments.get("Shoyu");
+    console.log('reusing "Shoyu" at', shoyu.address);
+  } catch (e) {
+    const shoyuFactory = await ethers.getContractFactory("Shoyu");
 
-  console.log("Shoyu deployed at address", shoyu.address);
+    const shoyu = await upgrades.deployProxy(
+      shoyuFactory,
+      [adapterRegistry.address, bentobox.address],
+      {
+        initializer: "initialize",
+        unsafeAllow: ["delegatecall"],
+      }
+    );
+
+    await shoyu.deployed();
+
+    const artifact = await deployments.getExtendedArtifact("Shoyu");
+    await save("Shoyu", { address: shoyu.address, ...artifact });
+    console.log("Shoyu deployed at address", shoyu.address);
+  }
 };
 
 export default deployFunction;
 
-deployFunction.dependencies = ["DeploySeaport", "DeploySushiswap"];
+deployFunction.dependencies = ["DeploySushiswap"];
 
 deployFunction.tags = ["DeployShoyu"];
