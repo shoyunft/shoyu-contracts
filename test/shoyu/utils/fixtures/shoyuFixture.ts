@@ -1,6 +1,6 @@
 import { Contract, Signer } from "ethers";
 import { MaxUint256 } from "@ethersproject/constants";
-import { deployments, ethers } from "hardhat";
+import { deployments, ethers, upgrades } from "hardhat";
 import { deployContract } from "../../../utils/contracts";
 
 export const shoyuFixture = async (
@@ -42,12 +42,18 @@ export const shoyuFixture = async (
     [true, true]
   );
 
-  const shoyuContract = await deployContract(
-    "Shoyu",
-    owner as any,
-    adapterRegistry.address,
-    bentobox.address
+  const shoyuFactory = await ethers.getContractFactory("Shoyu");
+
+  const shoyuContract = await upgrades.deployProxy(
+    shoyuFactory,
+    [adapterRegistry.address, bentobox.address],
+    {
+      initializer: "initialize",
+      unsafeAllow: ["delegatecall"],
+    }
   );
+
+  await shoyuContract.deployed();
 
   await shoyuContract.approveERC20(
     testWETH.address,

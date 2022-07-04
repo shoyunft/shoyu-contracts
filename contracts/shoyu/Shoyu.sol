@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
@@ -10,19 +12,21 @@ import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
 
-contract Shoyu is IShoyu, Ownable, Pausable {
-    AdapterRegistry public immutable adapterRegistry;
+contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+    AdapterRegistry public adapterRegistry;
 
-    constructor(address _adapterRegistery, address _bentobox) {
+    function initialize(address _adapterRegistery, address _bentobox) initializer public {
         adapterRegistry = AdapterRegistry(_adapterRegistery);
         IBentoBoxMinimal(_bentobox).registerProtocol();
+
+        __Ownable_init();
     }
 
     function cook(
         uint8[] calldata adapterIds,
         uint256[] calldata values,
         bytes[] calldata datas
-    ) external payable override whenNotPaused {
+    ) external payable whenNotPaused {
         uint256 length = adapterIds.length;
         for (uint256 i; i < length; ++i) {
             (
@@ -101,7 +105,6 @@ contract Shoyu is IShoyu, Ownable, Pausable {
     receive() external payable {}
 
     /// @dev Allows this contract to receive ERC1155 tokens
-    ///      TODO: is this required for ERC721 too?
     function onERC1155Received(
         address,
         address,
@@ -121,4 +124,7 @@ contract Shoyu is IShoyu, Ownable, Pausable {
     ) public virtual returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
+
+    /// @dev Required by UUPSUpgradeable
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 }

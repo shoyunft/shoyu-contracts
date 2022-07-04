@@ -12,6 +12,8 @@
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@openzeppelin/contracts": "^4.7.0",
+    "@openzeppelin/contracts-upgradeable": "^4.7.0",
+    "@openzeppelin/hardhat-upgrades": "^1.19.0",
     "@sushiswap/core": "^1.4.2",
     "@sushiswap/core-sdk": "^1.0.0-canary.34",
     "@tenderly/hardhat-tenderly": "^1.0.15",
