@@ -1,0 +1,20 @@
+node_modules
+.env
+coverage
+coverage.json
+typechain-types
+yarn-error.log
+
+#Hardhat files
+artifacts/
+hh-cache/
+
+
+.DS_Store
+
+# VScode
+.vscode
+__pycache__
+
+.openzeppelin
+
