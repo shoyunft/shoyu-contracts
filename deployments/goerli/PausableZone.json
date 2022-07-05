@@ -1,0 +1,1263 @@
+{
+  "address": "0xA88C2477670c8Bc8380881B3b77820E83F922e78",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "CallerIsNotOperator",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CallerIsNotOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CallerIsNotPotentialOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidController",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidOperator",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPauser",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OwnerCanNotBeSetAsZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PauserCanNotBeSetAsZero",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "zone",
+          "type": "address"
+        }
+      ],
+      "name": "ZoneAlreadyExists",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newOperator",
+          "type": "address"
+        }
+      ],
+      "name": "OperatorUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newPauser",
+          "type": "address"
+        }
+      ],
+      "name": "PauserUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newPotentialOwner",
+          "type": "address"
+        }
+      ],
+      "name": "PotentialOwnerUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "zone",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "salt",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ZoneCreated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operatorToAssign",
+          "type": "address"
+        }
+      ],
+      "name": "assignOperator",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract SeaportInterface",
+          "name": "seaport",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "offerer",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "zone",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum ItemType",
+                  "name": "itemType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "identifierOrCriteria",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startAmount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endAmount",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct OfferItem[]",
+              "name": "offer",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum ItemType",
+                  "name": "itemType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "identifierOrCriteria",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startAmount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endAmount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address payable",
+                  "name": "recipient",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct ConsiderationItem[]",
+              "name": "consideration",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "enum OrderType",
+              "name": "orderType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "endTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "zoneHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "salt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "conduitKey",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "counter",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct OrderComponents[]",
+          "name": "orders",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "cancelOrders",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "cancelled",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract SeaportInterface",
+          "name": "seaport",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "offerer",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "zone",
+                  "type": "address"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct OfferItem[]",
+                  "name": "offer",
+                  "type": "tuple[]"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "address payable",
+                      "name": "recipient",
+                      "type": "address"
+                    }
+                  ],
+                  "internalType": "struct ConsiderationItem[]",
+                  "name": "consideration",
+                  "type": "tuple[]"
+                },
+                {
+                  "internalType": "enum OrderType",
+                  "name": "orderType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "zoneHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "salt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "conduitKey",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalOriginalConsiderationItems",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct OrderParameters",
+              "name": "parameters",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint120",
+              "name": "numerator",
+              "type": "uint120"
+            },
+            {
+              "internalType": "uint120",
+              "name": "denominator",
+              "type": "uint120"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "extraData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct AdvancedOrder[]",
+          "name": "orders",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "orderIndex",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum Side",
+              "name": "side",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "identifier",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32[]",
+              "name": "criteriaProof",
+              "type": "bytes32[]"
+            }
+          ],
+          "internalType": "struct CriteriaResolver[]",
+          "name": "criteriaResolvers",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "orderIndex",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "itemIndex",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FulfillmentComponent[]",
+              "name": "offerComponents",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "orderIndex",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "itemIndex",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FulfillmentComponent[]",
+              "name": "considerationComponents",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct Fulfillment[]",
+          "name": "fulfillments",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "executeMatchAdvancedOrders",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "enum ItemType",
+                  "name": "itemType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "identifier",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address payable",
+                  "name": "recipient",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct ReceivedItem",
+              "name": "item",
+              "type": "tuple"
+            },
+            {
+              "internalType": "address",
+              "name": "offerer",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "conduitKey",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct Execution[]",
+          "name": "executions",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract SeaportInterface",
+          "name": "seaport",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "offerer",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "zone",
+                  "type": "address"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct OfferItem[]",
+                  "name": "offer",
+                  "type": "tuple[]"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "address payable",
+                      "name": "recipient",
+                      "type": "address"
+                    }
+                  ],
+                  "internalType": "struct ConsiderationItem[]",
+                  "name": "consideration",
+                  "type": "tuple[]"
+                },
+                {
+                  "internalType": "enum OrderType",
+                  "name": "orderType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "zoneHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "salt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "conduitKey",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalOriginalConsiderationItems",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct OrderParameters",
+              "name": "parameters",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct Order[]",
+          "name": "orders",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "orderIndex",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "itemIndex",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FulfillmentComponent[]",
+              "name": "offerComponents",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "orderIndex",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "itemIndex",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FulfillmentComponent[]",
+              "name": "considerationComponents",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct Fulfillment[]",
+          "name": "fulfillments",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "executeMatchOrders",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "enum ItemType",
+                  "name": "itemType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "identifier",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address payable",
+                  "name": "recipient",
+                  "type": "address"
+                }
+              ],
+              "internalType": "struct ReceivedItem",
+              "name": "item",
+              "type": "tuple"
+            },
+            {
+              "internalType": "address",
+              "name": "offerer",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "conduitKey",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct Execution[]",
+          "name": "executions",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "offerer",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "zoneHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isValidOrder",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "validOrderMagicValue",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "offerer",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "zone",
+                  "type": "address"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct OfferItem[]",
+                  "name": "offer",
+                  "type": "tuple[]"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "enum ItemType",
+                      "name": "itemType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "identifierOrCriteria",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "startAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "endAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "address payable",
+                      "name": "recipient",
+                      "type": "address"
+                    }
+                  ],
+                  "internalType": "struct ConsiderationItem[]",
+                  "name": "consideration",
+                  "type": "tuple[]"
+                },
+                {
+                  "internalType": "enum OrderType",
+                  "name": "orderType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "startTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "endTime",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "zoneHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "salt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "conduitKey",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalOriginalConsiderationItems",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct OrderParameters",
+              "name": "parameters",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint120",
+              "name": "numerator",
+              "type": "uint120"
+            },
+            {
+              "internalType": "uint120",
+              "name": "denominator",
+              "type": "uint120"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "extraData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct AdvancedOrder",
+          "name": "order",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "priorOrderHashes",
+          "type": "bytes32[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "orderIndex",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum Side",
+              "name": "side",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "identifier",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32[]",
+              "name": "criteriaProof",
+              "type": "bytes32[]"
+            }
+          ],
+          "internalType": "struct CriteriaResolver[]",
+          "name": "criteriaResolvers",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "isValidOrderIncludingExtraData",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "validOrderMagicValue",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "operator",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "payee",
+          "type": "address"
+        }
+      ],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "6d132c08ea5855a8db9ad1d8958352e3",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.14+commit.80d49f37\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"CallerIsNotOperator\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CallerIsNotOwner\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"CallerIsNotPotentialOwner\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidController\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidOperator\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidPauser\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"OwnerCanNotBeSetAsZero\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"PauserCanNotBeSetAsZero\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"}],\"name\":\"ZoneAlreadyExists\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newOperator\",\"type\":\"address\"}],\"name\":\"OperatorUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newPauser\",\"type\":\"address\"}],\"name\":\"PauserUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newPotentialOwner\",\"type\":\"address\"}],\"name\":\"PotentialOwnerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"salt\",\"type\":\"bytes32\"}],\"name\":\"ZoneCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operatorToAssign\",\"type\":\"address\"}],\"name\":\"assignOperator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract SeaportInterface\",\"name\":\"seaport\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"}],\"internalType\":\"struct OfferItem[]\",\"name\":\"offer\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ConsiderationItem[]\",\"name\":\"consideration\",\"type\":\"tuple[]\"},{\"internalType\":\"enum OrderType\",\"name\":\"orderType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"zoneHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"salt\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"counter\",\"type\":\"uint256\"}],\"internalType\":\"struct OrderComponents[]\",\"name\":\"orders\",\"type\":\"tuple[]\"}],\"name\":\"cancelOrders\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"cancelled\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract SeaportInterface\",\"name\":\"seaport\",\"type\":\"address\"},{\"components\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"}],\"internalType\":\"struct OfferItem[]\",\"name\":\"offer\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ConsiderationItem[]\",\"name\":\"consideration\",\"type\":\"tuple[]\"},{\"internalType\":\"enum OrderType\",\"name\":\"orderType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"zoneHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"salt\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"totalOriginalConsiderationItems\",\"type\":\"uint256\"}],\"internalType\":\"struct OrderParameters\",\"name\":\"parameters\",\"type\":\"tuple\"},{\"internalType\":\"uint120\",\"name\":\"numerator\",\"type\":\"uint120\"},{\"internalType\":\"uint120\",\"name\":\"denominator\",\"type\":\"uint120\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"extraData\",\"type\":\"bytes\"}],\"internalType\":\"struct AdvancedOrder[]\",\"name\":\"orders\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"enum Side\",\"name\":\"side\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"identifier\",\"type\":\"uint256\"},{\"internalType\":\"bytes32[]\",\"name\":\"criteriaProof\",\"type\":\"bytes32[]\"}],\"internalType\":\"struct CriteriaResolver[]\",\"name\":\"criteriaResolvers\",\"type\":\"tuple[]\"},{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"itemIndex\",\"type\":\"uint256\"}],\"internalType\":\"struct FulfillmentComponent[]\",\"name\":\"offerComponents\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"itemIndex\",\"type\":\"uint256\"}],\"internalType\":\"struct FulfillmentComponent[]\",\"name\":\"considerationComponents\",\"type\":\"tuple[]\"}],\"internalType\":\"struct Fulfillment[]\",\"name\":\"fulfillments\",\"type\":\"tuple[]\"}],\"name\":\"executeMatchAdvancedOrders\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifier\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ReceivedItem\",\"name\":\"item\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"}],\"internalType\":\"struct Execution[]\",\"name\":\"executions\",\"type\":\"tuple[]\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract SeaportInterface\",\"name\":\"seaport\",\"type\":\"address\"},{\"components\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"}],\"internalType\":\"struct OfferItem[]\",\"name\":\"offer\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ConsiderationItem[]\",\"name\":\"consideration\",\"type\":\"tuple[]\"},{\"internalType\":\"enum OrderType\",\"name\":\"orderType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"zoneHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"salt\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"totalOriginalConsiderationItems\",\"type\":\"uint256\"}],\"internalType\":\"struct OrderParameters\",\"name\":\"parameters\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"internalType\":\"struct Order[]\",\"name\":\"orders\",\"type\":\"tuple[]\"},{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"itemIndex\",\"type\":\"uint256\"}],\"internalType\":\"struct FulfillmentComponent[]\",\"name\":\"offerComponents\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"itemIndex\",\"type\":\"uint256\"}],\"internalType\":\"struct FulfillmentComponent[]\",\"name\":\"considerationComponents\",\"type\":\"tuple[]\"}],\"internalType\":\"struct Fulfillment[]\",\"name\":\"fulfillments\",\"type\":\"tuple[]\"}],\"name\":\"executeMatchOrders\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifier\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ReceivedItem\",\"name\":\"item\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"}],\"internalType\":\"struct Execution[]\",\"name\":\"executions\",\"type\":\"tuple[]\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"orderHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"zoneHash\",\"type\":\"bytes32\"}],\"name\":\"isValidOrder\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"validOrderMagicValue\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"orderHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"},{\"components\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"offerer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"zone\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"}],\"internalType\":\"struct OfferItem[]\",\"name\":\"offer\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"enum ItemType\",\"name\":\"itemType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"identifierOrCriteria\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"startAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endAmount\",\"type\":\"uint256\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"}],\"internalType\":\"struct ConsiderationItem[]\",\"name\":\"consideration\",\"type\":\"tuple[]\"},{\"internalType\":\"enum OrderType\",\"name\":\"orderType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"endTime\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"zoneHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"salt\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"conduitKey\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"totalOriginalConsiderationItems\",\"type\":\"uint256\"}],\"internalType\":\"struct OrderParameters\",\"name\":\"parameters\",\"type\":\"tuple\"},{\"internalType\":\"uint120\",\"name\":\"numerator\",\"type\":\"uint120\"},{\"internalType\":\"uint120\",\"name\":\"denominator\",\"type\":\"uint120\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"extraData\",\"type\":\"bytes\"}],\"internalType\":\"struct AdvancedOrder\",\"name\":\"order\",\"type\":\"tuple\"},{\"internalType\":\"bytes32[]\",\"name\":\"priorOrderHashes\",\"type\":\"bytes32[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"orderIndex\",\"type\":\"uint256\"},{\"internalType\":\"enum Side\",\"name\":\"side\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"identifier\",\"type\":\"uint256\"},{\"internalType\":\"bytes32[]\",\"name\":\"criteriaProof\",\"type\":\"bytes32[]\"}],\"internalType\":\"struct CriteriaResolver[]\",\"name\":\"criteriaResolvers\",\"type\":\"tuple[]\"}],\"name\":\"isValidOrderIncludingExtraData\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"validOrderMagicValue\",\"type\":\"bytes4\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"operator\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"payee\",\"type\":\"address\"}],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"cupOJoseph, BCLeFevre, ryanio\",\"errors\":{\"CallerIsNotOperator()\":[{\"details\":\"Revert with an error when the caller does not have the operator role\"}],\"CallerIsNotOwner()\":[{\"details\":\"Revert with an error when the caller does not have the _owner role\"}],\"CallerIsNotPotentialOwner()\":[{\"details\":\"Revert with an error when the caller does not have      the potentialOwner role.\"}],\"InvalidController()\":[{\"details\":\"Revert with an error when attempting to pause the zone or update the      operator while the caller is not the controller of the zone.\"}],\"InvalidOperator()\":[{\"details\":\"Revert with an error when attempting to call an operation      while the caller is not the controller or operator of the zone.\"}],\"InvalidPauser()\":[{\"details\":\"Revert with an error when attempting to pause the zone      while the caller is not the owner or pauser of the zone.\"}],\"OwnerCanNotBeSetAsZero()\":[{\"details\":\"Revert with an error when attempting to set the new potential owner      as the 0 address.\"}],\"PauserCanNotBeSetAsZero()\":[{\"details\":\"Revert with an error when attempting to set the new potential pauser      as the 0 address.\"}],\"ZoneAlreadyExists(address)\":[{\"details\":\"Revert with an error when attempting to deploy a zone that is      currently deployed.\"}]},\"kind\":\"dev\",\"methods\":{\"assignOperator(address)\":{\"params\":{\"operatorToAssign\":\"The address to assign as the operator.\"}},\"cancelOrders(address,(address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[])\":{\"params\":{\"orders\":\"The orders to cancel.\",\"seaport\":\"The Seaport address.\"},\"returns\":{\"cancelled\":\"A boolean indicating whether the supplied orders have                   been successfully cancelled.\"}},\"executeMatchAdvancedOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[])\":{\"params\":{\"criteriaResolvers\":\"An array where each element contains a reference                          to a specific order as well as that order's                          offer or consideration, a token identifier, and                          a proof that the supplied token identifier is                          contained in the order's merkle root.\",\"fulfillments\":\"An array of elements allocating offer components                          to consideration components.\",\"orders\":\"The orders to match.\",\"seaport\":\"The Seaport address.\"},\"returns\":{\"executions\":\"An array of elements indicating the sequence of                    transfers performed as part of matching the given                    orders.\"}},\"executeMatchOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),bytes)[],((uint256,uint256)[],(uint256,uint256)[])[])\":{\"params\":{\"fulfillments\":\"An array of elements allocating offer components                     to consideration components.\",\"orders\":\"The orders to match.\",\"seaport\":\"The Seaport address.\"},\"returns\":{\"executions\":\"An array of elements indicating the sequence of                    transfers performed as part of matching the given                    orders.\"}},\"isValidOrder(bytes32,address,address,bytes32)\":{\"details\":\"This function is called by Seaport whenever extraData is not      provided by the caller.\",\"params\":{\"caller\":\"The caller in question.\",\"offerer\":\"The offerer in question.\",\"orderHash\":\"The hash of the order.\",\"zoneHash\":\"The hash to provide upon calling the zone.\"},\"returns\":{\"validOrderMagicValue\":\"A magic value indicating if the order is                              currently valid.\"}},\"isValidOrderIncludingExtraData(bytes32,address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),bytes32[],(uint256,uint8,uint256,uint256,bytes32[])[])\":{\"details\":\"This function is called by Seaport whenever any extraData is      provided by the caller.\",\"params\":{\"caller\":\"The caller in question.\",\"criteriaResolvers\":\"The criteria resolvers corresponding to                          the order.\",\"order\":\"The order in question.\",\"orderHash\":\"The hash of the order.\",\"priorOrderHashes\":\"The order hashes of each order supplied prior to                          the current order as part of a \\\"match\\\" variety                          of order fulfillment.\"},\"returns\":{\"validOrderMagicValue\":\"A magic value indicating if the order is                              currently valid.\"}}},\"title\":\"PausableZone\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"assignOperator(address)\":{\"notice\":\"Assign the given address with the ability to operate the zone.\"},\"cancelOrders(address,(address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[])\":{\"notice\":\"Cancel an arbitrary number of orders that have agreed to use the         contract as their zone.\"},\"constructor\":{\"notice\":\"Set the deployer as the controller of the zone.\"},\"executeMatchAdvancedOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[])\":{\"notice\":\"Execute an arbitrary number of matched advanced orders,         each with an arbitrary number of items for offer and         consideration along with a set of fulfillments allocating         offer components to consideration components.\"},\"executeMatchOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),bytes)[],((uint256,uint256)[],(uint256,uint256)[])[])\":{\"notice\":\"Execute an arbitrary number of matched orders, each with         an arbitrary number of items for offer and consideration         along with a set of fulfillments allocating offer components         to consideration components.\"},\"isValidOrder(bytes32,address,address,bytes32)\":{\"notice\":\"Check if a given order is currently valid.\"},\"isValidOrderIncludingExtraData(bytes32,address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),bytes32[],(uint256,uint8,uint256,uint256,bytes32[])[])\":{\"notice\":\"Check if a given order including extraData is currently valid.\"},\"pause(address)\":{\"notice\":\"Pause this contract, safely stopping orders from using         the contract as a zone. Restricted orders with this address as a         zone will not be fulfillable unless the zone is redeployed to the         same address.\"}},\"notice\":\"PausableZone is a simple zone implementation that approves every         order. It can be self-destructed by its controller to pause         restricted orders that have it set as their zone.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/seaport/Zones/PausableZone.sol\":\"PausableZone\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":19066},\"remappings\":[],\"viaIR\":true},\"sources\":{\"contracts/seaport/Zones/PausableZone.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.7;\\n\\nimport { ZoneInterface } from \\\"seaport/contracts/interfaces/ZoneInterface.sol\\\";\\nimport { ZoneInteractionErrors } from \\\"seaport/contracts/interfaces/ZoneInteractionErrors.sol\\\";\\n\\n// prettier-ignore\\nimport {\\n    PausableZoneEventsAndErrors\\n} from \\\"./PausableZoneEventsAndErrors.sol\\\";\\n\\nimport { SeaportInterface } from \\\"seaport/contracts/interfaces/SeaportInterface.sol\\\";\\n\\n// prettier-ignore\\nimport {\\n    AdvancedOrder,\\n    CriteriaResolver,\\n    Order,\\n    OrderComponents,\\n    Fulfillment,\\n    Execution\\n} from \\\"seaport/contracts/lib/ConsiderationStructs.sol\\\";\\n\\nimport { PausableZoneInterface } from \\\"./PausableZoneInterface.sol\\\";\\n\\n/**\\n * @title  PausableZone\\n * @author cupOJoseph, BCLeFevre, ryanio\\n * @notice PausableZone is a simple zone implementation that approves every\\n *         order. It can be self-destructed by its controller to pause\\n *         restricted orders that have it set as their zone.\\n */\\ncontract PausableZone is\\n    PausableZoneEventsAndErrors,\\n    ZoneInterface,\\n    PausableZoneInterface\\n{\\n    // Set an immutable controller that can pause the zone & update an operator.\\n    address internal immutable _controller;\\n\\n    // Set an operator that can instruct the zone to cancel or execute orders.\\n    address public operator;\\n\\n    /**\\n     * @dev Ensure that the caller is either the operator or controller.\\n     */\\n    modifier isOperator() {\\n        // Ensure that the caller is either the operator or the controller.\\n        if (msg.sender != operator && msg.sender != _controller) {\\n            revert InvalidOperator();\\n        }\\n\\n        // Continue with function execution.\\n        _;\\n    }\\n\\n    /**\\n     * @dev Ensure that the caller is the controller.\\n     */\\n    modifier isController() {\\n        // Ensure that the caller is the controller.\\n        if (msg.sender != _controller) {\\n            revert InvalidController();\\n        }\\n\\n        // Continue with function execution.\\n        _;\\n    }\\n\\n    /**\\n     * @notice Set the deployer as the controller of the zone.\\n     */\\n    constructor() {\\n        // Set the controller to the deployer.\\n        _controller = msg.sender;\\n\\n        // Emit an event signifying that the zone is unpaused.\\n        emit Unpaused();\\n    }\\n\\n    /**\\n     * @notice Cancel an arbitrary number of orders that have agreed to use the\\n     *         contract as their zone.\\n     *\\n     * @param seaport  The Seaport address.\\n     * @param orders   The orders to cancel.\\n     *\\n     * @return cancelled A boolean indicating whether the supplied orders have\\n     *                   been successfully cancelled.\\n     */\\n    function cancelOrders(\\n        SeaportInterface seaport,\\n        OrderComponents[] calldata orders\\n    ) external override isOperator returns (bool cancelled) {\\n        // Call cancel on Seaport and return its boolean value.\\n        cancelled = seaport.cancel(orders);\\n    }\\n\\n    /**\\n     * @notice Pause this contract, safely stopping orders from using\\n     *         the contract as a zone. Restricted orders with this address as a\\n     *         zone will not be fulfillable unless the zone is redeployed to the\\n     *         same address.\\n     */\\n    function pause(address payee) external override isController {\\n        // Emit an event signifying that the zone is paused.\\n        emit Paused();\\n\\n        // Destroy the zone, sending any ether to the transaction submitter.\\n        selfdestruct(payable(payee));\\n    }\\n\\n    /**\\n     * @notice Assign the given address with the ability to operate the zone.\\n     *\\n     * @param operatorToAssign The address to assign as the operator.\\n     */\\n    function assignOperator(address operatorToAssign)\\n        external\\n        override\\n        isController\\n    {\\n        // Ensure the operator being assigned is not the null address.\\n        if (operatorToAssign == address(0)) {\\n            revert PauserCanNotBeSetAsZero();\\n        }\\n\\n        // Set the given address as the new operator.\\n        operator = operatorToAssign;\\n\\n        // Emit an event indicating the operator has been updated.\\n        emit OperatorUpdated(operator);\\n    }\\n\\n    /**\\n     * @notice Execute an arbitrary number of matched orders, each with\\n     *         an arbitrary number of items for offer and consideration\\n     *         along with a set of fulfillments allocating offer components\\n     *         to consideration components.\\n     *\\n     * @param seaport      The Seaport address.\\n     * @param orders       The orders to match.\\n     * @param fulfillments An array of elements allocating offer components\\n     *                     to consideration components.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function executeMatchOrders(\\n        SeaportInterface seaport,\\n        Order[] calldata orders,\\n        Fulfillment[] calldata fulfillments\\n    )\\n        external\\n        payable\\n        override\\n        isOperator\\n        returns (Execution[] memory executions)\\n    {\\n        // Call matchOrders on Seaport and return the sequence of transfers\\n        // performed as part of matching the given orders.\\n        executions = seaport.matchOrders{ value: msg.value }(\\n            orders,\\n            fulfillments\\n        );\\n    }\\n\\n    /**\\n     * @notice Execute an arbitrary number of matched advanced orders,\\n     *         each with an arbitrary number of items for offer and\\n     *         consideration along with a set of fulfillments allocating\\n     *         offer components to consideration components.\\n     *\\n     * @param seaport           The Seaport address.\\n     * @param orders            The orders to match.\\n     * @param criteriaResolvers An array where each element contains a reference\\n     *                          to a specific order as well as that order's\\n     *                          offer or consideration, a token identifier, and\\n     *                          a proof that the supplied token identifier is\\n     *                          contained in the order's merkle root.\\n     * @param fulfillments      An array of elements allocating offer components\\n     *                          to consideration components.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function executeMatchAdvancedOrders(\\n        SeaportInterface seaport,\\n        AdvancedOrder[] calldata orders,\\n        CriteriaResolver[] calldata criteriaResolvers,\\n        Fulfillment[] calldata fulfillments\\n    )\\n        external\\n        payable\\n        override\\n        isOperator\\n        returns (Execution[] memory executions)\\n    {\\n        // Call matchAdvancedOrders on Seaport and return the sequence of\\n        // transfers performed as part of matching the given orders.\\n        executions = seaport.matchAdvancedOrders{ value: msg.value }(\\n            orders,\\n            criteriaResolvers,\\n            fulfillments\\n        );\\n    }\\n\\n    /**\\n     * @notice Check if a given order is currently valid.\\n     *\\n     * @dev This function is called by Seaport whenever extraData is not\\n     *      provided by the caller.\\n     *\\n     * @param orderHash The hash of the order.\\n     * @param caller    The caller in question.\\n     * @param offerer   The offerer in question.\\n     * @param zoneHash  The hash to provide upon calling the zone.\\n     *\\n     * @return validOrderMagicValue A magic value indicating if the order is\\n     *                              currently valid.\\n     */\\n    function isValidOrder(\\n        bytes32 orderHash,\\n        address caller,\\n        address offerer,\\n        bytes32 zoneHash\\n    ) external pure override returns (bytes4 validOrderMagicValue) {\\n        orderHash;\\n        caller;\\n        offerer;\\n        zoneHash;\\n\\n        // Return the selector of isValidOrder as the magic value.\\n        validOrderMagicValue = ZoneInterface.isValidOrder.selector;\\n    }\\n\\n    /**\\n     * @notice Check if a given order including extraData is currently valid.\\n     *\\n     * @dev This function is called by Seaport whenever any extraData is\\n     *      provided by the caller.\\n     *\\n     * @param orderHash         The hash of the order.\\n     * @param caller            The caller in question.\\n     * @param order             The order in question.\\n     * @param priorOrderHashes  The order hashes of each order supplied prior to\\n     *                          the current order as part of a \\\"match\\\" variety\\n     *                          of order fulfillment.\\n     * @param criteriaResolvers The criteria resolvers corresponding to\\n     *                          the order.\\n     *\\n     * @return validOrderMagicValue A magic value indicating if the order is\\n     *                              currently valid.\\n     */\\n    function isValidOrderIncludingExtraData(\\n        bytes32 orderHash,\\n        address caller,\\n        AdvancedOrder calldata order,\\n        bytes32[] calldata priorOrderHashes,\\n        CriteriaResolver[] calldata criteriaResolvers\\n    ) external pure override returns (bytes4 validOrderMagicValue) {\\n        orderHash;\\n        caller;\\n        order;\\n        priorOrderHashes;\\n        criteriaResolvers;\\n\\n        // Return the selector of isValidOrder as the magic value.\\n        validOrderMagicValue = ZoneInterface.isValidOrder.selector;\\n    }\\n}\\n\",\"keccak256\":\"0x5db23ee263705e3bec5b66db47b8c22e6821cfdce4b5a84fffa9f8121c4d913a\",\"license\":\"MIT\"},\"contracts/seaport/Zones/PausableZoneEventsAndErrors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.7;\\n\\n/**\\n * @notice PausableZoneEventsAndErrors contains errors and events\\n *         related to zone interaction.\\n */\\ninterface PausableZoneEventsAndErrors {\\n    /**\\n     * @dev Emit an event whenever a zone is successfully paused.\\n     */\\n    event Paused();\\n\\n    /**\\n     * @dev Emit an event whenever a zone is successfully unpaused (created).\\n     */\\n    event Unpaused();\\n\\n    /**\\n     * @dev Emit an event whenever a zone owner registers a new potential\\n     *      owner for that zone.\\n     *\\n     * @param newPotentialOwner The new potential owner of the zone.\\n     */\\n    event PotentialOwnerUpdated(address newPotentialOwner);\\n\\n    /**\\n     * @dev Emit an event whenever zone ownership is transferred.\\n     *\\n     * @param previousOwner The previous owner of the zone.\\n     * @param newOwner      The new owner of the zone.\\n     */\\n    event OwnershipTransferred(address previousOwner, address newOwner);\\n\\n    /**\\n     * @dev Emit an event whenever a new zone is created.\\n     *\\n     * @param zone The address of the zone.\\n     * @param salt The salt used to deploy the zone.\\n     */\\n    event ZoneCreated(address zone, bytes32 salt);\\n\\n    /**\\n     * @dev Emit an event whenever a zone owner assigns a new pauser\\n     *\\n     * @param newPauser The new pausear of the zone.\\n     */\\n    event PauserUpdated(address newPauser);\\n\\n    /**\\n     * @dev Emit an event whenever a zone owner assigns a new operator\\n     *\\n     * @param newOperator The new operator of the zone.\\n     */\\n    event OperatorUpdated(address newOperator);\\n\\n    /**\\n     * @dev Revert with an error when attempting to pause the zone\\n     *      while the caller is not the owner or pauser of the zone.\\n     */\\n    error InvalidPauser();\\n\\n    /**\\n     * @dev Revert with an error when attempting to call an operation\\n     *      while the caller is not the controller or operator of the zone.\\n     */\\n    error InvalidOperator();\\n\\n    /**\\n     * @dev Revert with an error when attempting to pause the zone or update the\\n     *      operator while the caller is not the controller of the zone.\\n     */\\n    error InvalidController();\\n    /**\\n     * @dev Revert with an error when attempting to deploy a zone that is\\n     *      currently deployed.\\n     */\\n    error ZoneAlreadyExists(address zone);\\n\\n    /**\\n     * @dev Revert with an error when the caller does not have the _owner role\\n     *\\n     */\\n    error CallerIsNotOwner();\\n\\n    /**\\n     * @dev Revert with an error when the caller does not have the operator role\\n     *\\n     */\\n    error CallerIsNotOperator();\\n\\n    /**\\n     * @dev Revert with an error when attempting to set the new potential owner\\n     *      as the 0 address.\\n     *\\n     */\\n    error OwnerCanNotBeSetAsZero();\\n\\n    /**\\n     * @dev Revert with an error when attempting to set the new potential pauser\\n     *      as the 0 address.\\n     *\\n     */\\n    error PauserCanNotBeSetAsZero();\\n\\n    /**\\n     * @dev Revert with an error when the caller does not have\\n     *      the potentialOwner role.\\n     */\\n    error CallerIsNotPotentialOwner();\\n}\\n\",\"keccak256\":\"0xe30b7508c9e62946e204242cf3d18c966e36cbd56beb5cb969508bb88cf3fccb\",\"license\":\"MIT\"},\"contracts/seaport/Zones/PausableZoneInterface.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.7;\\n\\nimport { SeaportInterface } from \\\"seaport/contracts/interfaces/SeaportInterface.sol\\\";\\n\\n// prettier-ignore\\nimport {\\n    AdvancedOrder,\\n    CriteriaResolver,\\n    Order,\\n    OrderComponents,\\n    Fulfillment,\\n    Execution\\n} from \\\"seaport/contracts/lib/ConsiderationStructs.sol\\\";\\n\\n/**\\n * @title  PausableZone\\n * @author cupOJoseph, BCLeFevre, ryanio\\n * @notice PausableZone is a simple zone implementation that approves every\\n *         order. It can be self-destructed by its controller to pause\\n *         restricted orders that have it set as their zone.\\n */\\ninterface PausableZoneInterface {\\n    /**\\n     * @notice Cancel an arbitrary number of orders that have agreed to use the\\n     *         contract as their zone.\\n     *\\n     * @param seaport  The Seaport address.\\n     * @param orders   The orders to cancel.\\n     *\\n     * @return cancelled A boolean indicating whether the supplied orders have\\n     *                   been successfully cancelled.\\n     */\\n    function cancelOrders(\\n        SeaportInterface seaport,\\n        OrderComponents[] calldata orders\\n    ) external returns (bool cancelled);\\n\\n    /**\\n     * @notice Execute an arbitrary number of matched orders, each with\\n     *         an arbitrary number of items for offer and consideration\\n     *         along with a set of fulfillments allocating offer components\\n     *         to consideration components.\\n     *\\n     * @param seaport      The Seaport address.\\n     * @param orders       The orders to match.\\n     * @param fulfillments An array of elements allocating offer components\\n     *                     to consideration components.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function executeMatchOrders(\\n        SeaportInterface seaport,\\n        Order[] calldata orders,\\n        Fulfillment[] calldata fulfillments\\n    ) external payable returns (Execution[] memory executions);\\n\\n    /**\\n     * @notice Execute an arbitrary number of matched advanced orders,\\n     *         each with an arbitrary number of items for offer and\\n     *         consideration along with a set of fulfillments allocating\\n     *         offer components to consideration components.\\n     *\\n     * @param seaport           The Seaport address.\\n     * @param orders            The orders to match.\\n     * @param criteriaResolvers An array where each element contains a reference\\n     *                          to a specific order as well as that order's\\n     *                          offer or consideration, a token identifier, and\\n     *                          a proof that the supplied token identifier is\\n     *                          contained in the order's merkle root.\\n     * @param fulfillments      An array of elements allocating offer components\\n     *                          to consideration components.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function executeMatchAdvancedOrders(\\n        SeaportInterface seaport,\\n        AdvancedOrder[] calldata orders,\\n        CriteriaResolver[] calldata criteriaResolvers,\\n        Fulfillment[] calldata fulfillments\\n    ) external payable returns (Execution[] memory executions);\\n\\n    /**\\n     * @notice Pause this contract, safely stopping orders from using\\n     *         the contract as a zone. Restricted orders with this address as a\\n     *         zone will not be fulfillable unless the zone is redeployed to the\\n     *         same address.\\n     */\\n    function pause(address payee) external;\\n\\n    /**\\n     * @notice Assign the given address with the ability to operate the zone.\\n     *\\n     * @param operatorToAssign The address to assign as the operator.\\n     */\\n    function assignOperator(address operatorToAssign) external;\\n}\\n\",\"keccak256\":\"0x68b622ecd90f2609c4243e96921227b3f7ed4f965762556c4233c5dcd8507cfa\",\"license\":\"MIT\"},\"seaport/contracts/interfaces/SeaportInterface.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.8.7;\\n\\n// prettier-ignore\\nimport {\\n    BasicOrderParameters,\\n    OrderComponents,\\n    Fulfillment,\\n    FulfillmentComponent,\\n    Execution,\\n    Order,\\n    AdvancedOrder,\\n    OrderStatus,\\n    CriteriaResolver\\n} from \\\"../lib/ConsiderationStructs.sol\\\";\\n\\n/**\\n * @title SeaportInterface\\n * @author 0age\\n * @custom:version 1.1\\n * @notice Seaport is a generalized ETH/ERC20/ERC721/ERC1155 marketplace. It\\n *         minimizes external calls to the greatest extent possible and provides\\n *         lightweight methods for common routes as well as more flexible\\n *         methods for composing advanced orders.\\n *\\n * @dev SeaportInterface contains all external function interfaces for Seaport.\\n */\\ninterface SeaportInterface {\\n    /**\\n     * @notice Fulfill an order offering an ERC721 token by supplying Ether (or\\n     *         the native token for the given chain) as consideration for the\\n     *         order. An arbitrary number of \\\"additional recipients\\\" may also be\\n     *         supplied which will each receive native tokens from the fulfiller\\n     *         as consideration.\\n     *\\n     * @param parameters Additional information on the fulfilled order. Note\\n     *                   that the offerer must first approve this contract (or\\n     *                   their preferred conduit if indicated by the order) for\\n     *                   their offered ERC721 token to be transferred.\\n     *\\n     * @return fulfilled A boolean indicating whether the order has been\\n     *                   successfully fulfilled.\\n     */\\n    function fulfillBasicOrder(BasicOrderParameters calldata parameters)\\n        external\\n        payable\\n        returns (bool fulfilled);\\n\\n    /**\\n     * @notice Fulfill an order with an arbitrary number of items for offer and\\n     *         consideration. Note that this function does not support\\n     *         criteria-based orders or partial filling of orders (though\\n     *         filling the remainder of a partially-filled order is supported).\\n     *\\n     * @param order               The order to fulfill. Note that both the\\n     *                            offerer and the fulfiller must first approve\\n     *                            this contract (or the corresponding conduit if\\n     *                            indicated) to transfer any relevant tokens on\\n     *                            their behalf and that contracts must implement\\n     *                            `onERC1155Received` to receive ERC1155 tokens\\n     *                            as consideration.\\n     * @param fulfillerConduitKey A bytes32 value indicating what conduit, if\\n     *                            any, to source the fulfiller's token approvals\\n     *                            from. The zero hash signifies that no conduit\\n     *                            should be used, with direct approvals set on\\n     *                            Seaport.\\n     *\\n     * @return fulfilled A boolean indicating whether the order has been\\n     *                   successfully fulfilled.\\n     */\\n    function fulfillOrder(Order calldata order, bytes32 fulfillerConduitKey)\\n        external\\n        payable\\n        returns (bool fulfilled);\\n\\n    /**\\n     * @notice Fill an order, fully or partially, with an arbitrary number of\\n     *         items for offer and consideration alongside criteria resolvers\\n     *         containing specific token identifiers and associated proofs.\\n     *\\n     * @param advancedOrder       The order to fulfill along with the fraction\\n     *                            of the order to attempt to fill. Note that\\n     *                            both the offerer and the fulfiller must first\\n     *                            approve this contract (or their preferred\\n     *                            conduit if indicated by the order) to transfer\\n     *                            any relevant tokens on their behalf and that\\n     *                            contracts must implement `onERC1155Received`\\n     *                            to receive ERC1155 tokens as consideration.\\n     *                            Also note that all offer and consideration\\n     *                            components must have no remainder after\\n     *                            multiplication of the respective amount with\\n     *                            the supplied fraction for the partial fill to\\n     *                            be considered valid.\\n     * @param criteriaResolvers   An array where each element contains a\\n     *                            reference to a specific offer or\\n     *                            consideration, a token identifier, and a proof\\n     *                            that the supplied token identifier is\\n     *                            contained in the merkle root held by the item\\n     *                            in question's criteria element. Note that an\\n     *                            empty criteria indicates that any\\n     *                            (transferable) token identifier on the token\\n     *                            in question is valid and that no associated\\n     *                            proof needs to be supplied.\\n     * @param fulfillerConduitKey A bytes32 value indicating what conduit, if\\n     *                            any, to source the fulfiller's token approvals\\n     *                            from. The zero hash signifies that no conduit\\n     *                            should be used, with direct approvals set on\\n     *                            Seaport.\\n     * @param recipient           The intended recipient for all received items,\\n     *                            with `address(0)` indicating that the caller\\n     *                            should receive the items.\\n     *\\n     * @return fulfilled A boolean indicating whether the order has been\\n     *                   successfully fulfilled.\\n     */\\n    function fulfillAdvancedOrder(\\n        AdvancedOrder calldata advancedOrder,\\n        CriteriaResolver[] calldata criteriaResolvers,\\n        bytes32 fulfillerConduitKey,\\n        address recipient\\n    ) external payable returns (bool fulfilled);\\n\\n    /**\\n     * @notice Attempt to fill a group of orders, each with an arbitrary number\\n     *         of items for offer and consideration. Any order that is not\\n     *         currently active, has already been fully filled, or has been\\n     *         cancelled will be omitted. Remaining offer and consideration\\n     *         items will then be aggregated where possible as indicated by the\\n     *         supplied offer and consideration component arrays and aggregated\\n     *         items will be transferred to the fulfiller or to each intended\\n     *         recipient, respectively. Note that a failing item transfer or an\\n     *         issue with order formatting will cause the entire batch to fail.\\n     *         Note that this function does not support criteria-based orders or\\n     *         partial filling of orders (though filling the remainder of a\\n     *         partially-filled order is supported).\\n     *\\n     * @param orders                    The orders to fulfill. Note that both\\n     *                                  the offerer and the fulfiller must first\\n     *                                  approve this contract (or the\\n     *                                  corresponding conduit if indicated) to\\n     *                                  transfer any relevant tokens on their\\n     *                                  behalf and that contracts must implement\\n     *                                  `onERC1155Received` to receive ERC1155\\n     *                                  tokens as consideration.\\n     * @param offerFulfillments         An array of FulfillmentComponent arrays\\n     *                                  indicating which offer items to attempt\\n     *                                  to aggregate when preparing executions.\\n     * @param considerationFulfillments An array of FulfillmentComponent arrays\\n     *                                  indicating which consideration items to\\n     *                                  attempt to aggregate when preparing\\n     *                                  executions.\\n     * @param fulfillerConduitKey       A bytes32 value indicating what conduit,\\n     *                                  if any, to source the fulfiller's token\\n     *                                  approvals from. The zero hash signifies\\n     *                                  that no conduit should be used, with\\n     *                                  direct approvals set on this contract.\\n     * @param maximumFulfilled          The maximum number of orders to fulfill.\\n     *\\n     * @return availableOrders An array of booleans indicating if each order\\n     *                         with an index corresponding to the index of the\\n     *                         returned boolean was fulfillable or not.\\n     * @return executions      An array of elements indicating the sequence of\\n     *                         transfers performed as part of matching the given\\n     *                         orders.\\n     */\\n    function fulfillAvailableOrders(\\n        Order[] calldata orders,\\n        FulfillmentComponent[][] calldata offerFulfillments,\\n        FulfillmentComponent[][] calldata considerationFulfillments,\\n        bytes32 fulfillerConduitKey,\\n        uint256 maximumFulfilled\\n    )\\n        external\\n        payable\\n        returns (bool[] memory availableOrders, Execution[] memory executions);\\n\\n    /**\\n     * @notice Attempt to fill a group of orders, fully or partially, with an\\n     *         arbitrary number of items for offer and consideration per order\\n     *         alongside criteria resolvers containing specific token\\n     *         identifiers and associated proofs. Any order that is not\\n     *         currently active, has already been fully filled, or has been\\n     *         cancelled will be omitted. Remaining offer and consideration\\n     *         items will then be aggregated where possible as indicated by the\\n     *         supplied offer and consideration component arrays and aggregated\\n     *         items will be transferred to the fulfiller or to each intended\\n     *         recipient, respectively. Note that a failing item transfer or an\\n     *         issue with order formatting will cause the entire batch to fail.\\n     *\\n     * @param advancedOrders            The orders to fulfill along with the\\n     *                                  fraction of those orders to attempt to\\n     *                                  fill. Note that both the offerer and the\\n     *                                  fulfiller must first approve this\\n     *                                  contract (or their preferred conduit if\\n     *                                  indicated by the order) to transfer any\\n     *                                  relevant tokens on their behalf and that\\n     *                                  contracts must implement\\n     *                                  `onERC1155Received` to enable receipt of\\n     *                                  ERC1155 tokens as consideration. Also\\n     *                                  note that all offer and consideration\\n     *                                  components must have no remainder after\\n     *                                  multiplication of the respective amount\\n     *                                  with the supplied fraction for an\\n     *                                  order's partial fill amount to be\\n     *                                  considered valid.\\n     * @param criteriaResolvers         An array where each element contains a\\n     *                                  reference to a specific offer or\\n     *                                  consideration, a token identifier, and a\\n     *                                  proof that the supplied token identifier\\n     *                                  is contained in the merkle root held by\\n     *                                  the item in question's criteria element.\\n     *                                  Note that an empty criteria indicates\\n     *                                  that any (transferable) token\\n     *                                  identifier on the token in question is\\n     *                                  valid and that no associated proof needs\\n     *                                  to be supplied.\\n     * @param offerFulfillments         An array of FulfillmentComponent arrays\\n     *                                  indicating which offer items to attempt\\n     *                                  to aggregate when preparing executions.\\n     * @param considerationFulfillments An array of FulfillmentComponent arrays\\n     *                                  indicating which consideration items to\\n     *                                  attempt to aggregate when preparing\\n     *                                  executions.\\n     * @param fulfillerConduitKey       A bytes32 value indicating what conduit,\\n     *                                  if any, to source the fulfiller's token\\n     *                                  approvals from. The zero hash signifies\\n     *                                  that no conduit should be used, with\\n     *                                  direct approvals set on this contract.\\n     * @param recipient                 The intended recipient for all received\\n     *                                  items, with `address(0)` indicating that\\n     *                                  the caller should receive the items.\\n     * @param maximumFulfilled          The maximum number of orders to fulfill.\\n     *\\n     * @return availableOrders An array of booleans indicating if each order\\n     *                         with an index corresponding to the index of the\\n     *                         returned boolean was fulfillable or not.\\n     * @return executions      An array of elements indicating the sequence of\\n     *                         transfers performed as part of matching the given\\n     *                         orders.\\n     */\\n    function fulfillAvailableAdvancedOrders(\\n        AdvancedOrder[] calldata advancedOrders,\\n        CriteriaResolver[] calldata criteriaResolvers,\\n        FulfillmentComponent[][] calldata offerFulfillments,\\n        FulfillmentComponent[][] calldata considerationFulfillments,\\n        bytes32 fulfillerConduitKey,\\n        address recipient,\\n        uint256 maximumFulfilled\\n    )\\n        external\\n        payable\\n        returns (bool[] memory availableOrders, Execution[] memory executions);\\n\\n    /**\\n     * @notice Match an arbitrary number of orders, each with an arbitrary\\n     *         number of items for offer and consideration along with as set of\\n     *         fulfillments allocating offer components to consideration\\n     *         components. Note that this function does not support\\n     *         criteria-based or partial filling of orders (though filling the\\n     *         remainder of a partially-filled order is supported).\\n     *\\n     * @param orders       The orders to match. Note that both the offerer and\\n     *                     fulfiller on each order must first approve this\\n     *                     contract (or their conduit if indicated by the order)\\n     *                     to transfer any relevant tokens on their behalf and\\n     *                     each consideration recipient must implement\\n     *                     `onERC1155Received` to enable ERC1155 token receipt.\\n     * @param fulfillments An array of elements allocating offer components to\\n     *                     consideration components. Note that each\\n     *                     consideration component must be fully met for the\\n     *                     match operation to be valid.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function matchOrders(\\n        Order[] calldata orders,\\n        Fulfillment[] calldata fulfillments\\n    ) external payable returns (Execution[] memory executions);\\n\\n    /**\\n     * @notice Match an arbitrary number of full or partial orders, each with an\\n     *         arbitrary number of items for offer and consideration, supplying\\n     *         criteria resolvers containing specific token identifiers and\\n     *         associated proofs as well as fulfillments allocating offer\\n     *         components to consideration components.\\n     *\\n     * @param orders            The advanced orders to match. Note that both the\\n     *                          offerer and fulfiller on each order must first\\n     *                          approve this contract (or a preferred conduit if\\n     *                          indicated by the order) to transfer any relevant\\n     *                          tokens on their behalf and each consideration\\n     *                          recipient must implement `onERC1155Received` in\\n     *                          order to receive ERC1155 tokens. Also note that\\n     *                          the offer and consideration components for each\\n     *                          order must have no remainder after multiplying\\n     *                          the respective amount with the supplied fraction\\n     *                          in order for the group of partial fills to be\\n     *                          considered valid.\\n     * @param criteriaResolvers An array where each element contains a reference\\n     *                          to a specific order as well as that order's\\n     *                          offer or consideration, a token identifier, and\\n     *                          a proof that the supplied token identifier is\\n     *                          contained in the order's merkle root. Note that\\n     *                          an empty root indicates that any (transferable)\\n     *                          token identifier is valid and that no associated\\n     *                          proof needs to be supplied.\\n     * @param fulfillments      An array of elements allocating offer components\\n     *                          to consideration components. Note that each\\n     *                          consideration component must be fully met in\\n     *                          order for the match operation to be valid.\\n     *\\n     * @return executions An array of elements indicating the sequence of\\n     *                    transfers performed as part of matching the given\\n     *                    orders.\\n     */\\n    function matchAdvancedOrders(\\n        AdvancedOrder[] calldata orders,\\n        CriteriaResolver[] calldata criteriaResolvers,\\n        Fulfillment[] calldata fulfillments\\n    ) external payable returns (Execution[] memory executions);\\n\\n    /**\\n     * @notice Cancel an arbitrary number of orders. Note that only the offerer\\n     *         or the zone of a given order may cancel it. Callers should ensure\\n     *         that the intended order was cancelled by calling `getOrderStatus`\\n     *         and confirming that `isCancelled` returns `true`.\\n     *\\n     * @param orders The orders to cancel.\\n     *\\n     * @return cancelled A boolean indicating whether the supplied orders have\\n     *                   been successfully cancelled.\\n     */\\n    function cancel(OrderComponents[] calldata orders)\\n        external\\n        returns (bool cancelled);\\n\\n    /**\\n     * @notice Validate an arbitrary number of orders, thereby registering their\\n     *         signatures as valid and allowing the fulfiller to skip signature\\n     *         verification on fulfillment. Note that validated orders may still\\n     *         be unfulfillable due to invalid item amounts or other factors;\\n     *         callers should determine whether validated orders are fulfillable\\n     *         by simulating the fulfillment call prior to execution. Also note\\n     *         that anyone can validate a signed order, but only the offerer can\\n     *         validate an order without supplying a signature.\\n     *\\n     * @param orders The orders to validate.\\n     *\\n     * @return validated A boolean indicating whether the supplied orders have\\n     *                   been successfully validated.\\n     */\\n    function validate(Order[] calldata orders)\\n        external\\n        returns (bool validated);\\n\\n    /**\\n     * @notice Cancel all orders from a given offerer with a given zone in bulk\\n     *         by incrementing a counter. Note that only the offerer may\\n     *         increment the counter.\\n     *\\n     * @return newCounter The new counter.\\n     */\\n    function incrementCounter() external returns (uint256 newCounter);\\n\\n    /**\\n     * @notice Retrieve the order hash for a given order.\\n     *\\n     * @param order The components of the order.\\n     *\\n     * @return orderHash The order hash.\\n     */\\n    function getOrderHash(OrderComponents calldata order)\\n        external\\n        view\\n        returns (bytes32 orderHash);\\n\\n    /**\\n     * @notice Retrieve the status of a given order by hash, including whether\\n     *         the order has been cancelled or validated and the fraction of the\\n     *         order that has been filled.\\n     *\\n     * @param orderHash The order hash in question.\\n     *\\n     * @return isValidated A boolean indicating whether the order in question\\n     *                     has been validated (i.e. previously approved or\\n     *                     partially filled).\\n     * @return isCancelled A boolean indicating whether the order in question\\n     *                     has been cancelled.\\n     * @return totalFilled The total portion of the order that has been filled\\n     *                     (i.e. the \\\"numerator\\\").\\n     * @return totalSize   The total size of the order that is either filled or\\n     *                     unfilled (i.e. the \\\"denominator\\\").\\n     */\\n    function getOrderStatus(bytes32 orderHash)\\n        external\\n        view\\n        returns (\\n            bool isValidated,\\n            bool isCancelled,\\n            uint256 totalFilled,\\n            uint256 totalSize\\n        );\\n\\n    /**\\n     * @notice Retrieve the current counter for a given offerer.\\n     *\\n     * @param offerer The offerer in question.\\n     *\\n     * @return counter The current counter.\\n     */\\n    function getCounter(address offerer)\\n        external\\n        view\\n        returns (uint256 counter);\\n\\n    /**\\n     * @notice Retrieve configuration information for this contract.\\n     *\\n     * @return version           The contract version.\\n     * @return domainSeparator   The domain separator for this contract.\\n     * @return conduitController The conduit Controller set for this contract.\\n     */\\n    function information()\\n        external\\n        view\\n        returns (\\n            string memory version,\\n            bytes32 domainSeparator,\\n            address conduitController\\n        );\\n\\n    /**\\n     * @notice Retrieve the name of this contract.\\n     *\\n     * @return contractName The name of this contract.\\n     */\\n    function name() external view returns (string memory contractName);\\n}\\n\",\"keccak256\":\"0xa5153badd591846b56bea69c98f6badec51475df0d35bd8c7a28ec3b06d4653c\",\"license\":\"MIT\"},\"seaport/contracts/interfaces/ZoneInteractionErrors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.8.7;\\n\\n/**\\n * @title ZoneInteractionErrors\\n * @author 0age\\n * @notice ZoneInteractionErrors contains errors related to zone interaction.\\n */\\ninterface ZoneInteractionErrors {\\n    /**\\n     * @dev Revert with an error when attempting to fill an order that specifies\\n     *      a restricted submitter as its order type when not submitted by\\n     *      either the offerer or the order's zone or approved as valid by the\\n     *      zone in question via a staticcall to `isValidOrder`.\\n     *\\n     * @param orderHash The order hash for the invalid restricted order.\\n     */\\n    error InvalidRestrictedOrder(bytes32 orderHash);\\n}\\n\",\"keccak256\":\"0x4de0f0c7964a11f06baed4b751a99b18dcae95ffdc18fe9918c0fdf53db994da\",\"license\":\"MIT\"},\"seaport/contracts/interfaces/ZoneInterface.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.8.7;\\n\\n// prettier-ignore\\nimport {\\n    AdvancedOrder,\\n    CriteriaResolver\\n} from \\\"../lib/ConsiderationStructs.sol\\\";\\n\\ninterface ZoneInterface {\\n    // Called by Consideration whenever extraData is not provided by the caller.\\n    function isValidOrder(\\n        bytes32 orderHash,\\n        address caller,\\n        address offerer,\\n        bytes32 zoneHash\\n    ) external view returns (bytes4 validOrderMagicValue);\\n\\n    // Called by Consideration whenever any extraData is provided by the caller.\\n    function isValidOrderIncludingExtraData(\\n        bytes32 orderHash,\\n        address caller,\\n        AdvancedOrder calldata order,\\n        bytes32[] calldata priorOrderHashes,\\n        CriteriaResolver[] calldata criteriaResolvers\\n    ) external view returns (bytes4 validOrderMagicValue);\\n}\\n\",\"keccak256\":\"0x5c5d749fd3de01bd89acf7cb08f11d041b3a600819e18b8a51cebd65285ced46\",\"license\":\"MIT\"},\"seaport/contracts/lib/ConsiderationEnums.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.8.7;\\n\\n// prettier-ignore\\nenum OrderType {\\n    // 0: no partial fills, anyone can execute\\n    FULL_OPEN,\\n\\n    // 1: partial fills supported, anyone can execute\\n    PARTIAL_OPEN,\\n\\n    // 2: no partial fills, only offerer or zone can execute\\n    FULL_RESTRICTED,\\n\\n    // 3: partial fills supported, only offerer or zone can execute\\n    PARTIAL_RESTRICTED\\n}\\n\\n// prettier-ignore\\nenum BasicOrderType {\\n    // 0: no partial fills, anyone can execute\\n    ETH_TO_ERC721_FULL_OPEN,\\n\\n    // 1: partial fills supported, anyone can execute\\n    ETH_TO_ERC721_PARTIAL_OPEN,\\n\\n    // 2: no partial fills, only offerer or zone can execute\\n    ETH_TO_ERC721_FULL_RESTRICTED,\\n\\n    // 3: partial fills supported, only offerer or zone can execute\\n    ETH_TO_ERC721_PARTIAL_RESTRICTED,\\n\\n    // 4: no partial fills, anyone can execute\\n    ETH_TO_ERC1155_FULL_OPEN,\\n\\n    // 5: partial fills supported, anyone can execute\\n    ETH_TO_ERC1155_PARTIAL_OPEN,\\n\\n    // 6: no partial fills, only offerer or zone can execute\\n    ETH_TO_ERC1155_FULL_RESTRICTED,\\n\\n    // 7: partial fills supported, only offerer or zone can execute\\n    ETH_TO_ERC1155_PARTIAL_RESTRICTED,\\n\\n    // 8: no partial fills, anyone can execute\\n    ERC20_TO_ERC721_FULL_OPEN,\\n\\n    // 9: partial fills supported, anyone can execute\\n    ERC20_TO_ERC721_PARTIAL_OPEN,\\n\\n    // 10: no partial fills, only offerer or zone can execute\\n    ERC20_TO_ERC721_FULL_RESTRICTED,\\n\\n    // 11: partial fills supported, only offerer or zone can execute\\n    ERC20_TO_ERC721_PARTIAL_RESTRICTED,\\n\\n    // 12: no partial fills, anyone can execute\\n    ERC20_TO_ERC1155_FULL_OPEN,\\n\\n    // 13: partial fills supported, anyone can execute\\n    ERC20_TO_ERC1155_PARTIAL_OPEN,\\n\\n    // 14: no partial fills, only offerer or zone can execute\\n    ERC20_TO_ERC1155_FULL_RESTRICTED,\\n\\n    // 15: partial fills supported, only offerer or zone can execute\\n    ERC20_TO_ERC1155_PARTIAL_RESTRICTED,\\n\\n    // 16: no partial fills, anyone can execute\\n    ERC721_TO_ERC20_FULL_OPEN,\\n\\n    // 17: partial fills supported, anyone can execute\\n    ERC721_TO_ERC20_PARTIAL_OPEN,\\n\\n    // 18: no partial fills, only offerer or zone can execute\\n    ERC721_TO_ERC20_FULL_RESTRICTED,\\n\\n    // 19: partial fills supported, only offerer or zone can execute\\n    ERC721_TO_ERC20_PARTIAL_RESTRICTED,\\n\\n    // 20: no partial fills, anyone can execute\\n    ERC1155_TO_ERC20_FULL_OPEN,\\n\\n    // 21: partial fills supported, anyone can execute\\n    ERC1155_TO_ERC20_PARTIAL_OPEN,\\n\\n    // 22: no partial fills, only offerer or zone can execute\\n    ERC1155_TO_ERC20_FULL_RESTRICTED,\\n\\n    // 23: partial fills supported, only offerer or zone can execute\\n    ERC1155_TO_ERC20_PARTIAL_RESTRICTED\\n}\\n\\n// prettier-ignore\\nenum BasicOrderRouteType {\\n    // 0: provide Ether (or other native token) to receive offered ERC721 item.\\n    ETH_TO_ERC721,\\n\\n    // 1: provide Ether (or other native token) to receive offered ERC1155 item.\\n    ETH_TO_ERC1155,\\n\\n    // 2: provide ERC20 item to receive offered ERC721 item.\\n    ERC20_TO_ERC721,\\n\\n    // 3: provide ERC20 item to receive offered ERC1155 item.\\n    ERC20_TO_ERC1155,\\n\\n    // 4: provide ERC721 item to receive offered ERC20 item.\\n    ERC721_TO_ERC20,\\n\\n    // 5: provide ERC1155 item to receive offered ERC20 item.\\n    ERC1155_TO_ERC20\\n}\\n\\n// prettier-ignore\\nenum ItemType {\\n    // 0: ETH on mainnet, MATIC on polygon, etc.\\n    NATIVE,\\n\\n    // 1: ERC20 items (ERC777 and ERC20 analogues could also technically work)\\n    ERC20,\\n\\n    // 2: ERC721 items\\n    ERC721,\\n\\n    // 3: ERC1155 items\\n    ERC1155,\\n\\n    // 4: ERC721 items where a number of tokenIds are supported\\n    ERC721_WITH_CRITERIA,\\n\\n    // 5: ERC1155 items where a number of ids are supported\\n    ERC1155_WITH_CRITERIA\\n}\\n\\n// prettier-ignore\\nenum Side {\\n    // 0: Items that can be spent\\n    OFFER,\\n\\n    // 1: Items that must be received\\n    CONSIDERATION\\n}\\n\",\"keccak256\":\"0x6ddfa4ee4f4ff2893298a7f0c28d7f5ad8655f342f5cc21473656c47de50bba5\",\"license\":\"MIT\"},\"seaport/contracts/lib/ConsiderationStructs.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity >=0.8.7;\\n\\n// prettier-ignore\\nimport {\\n    OrderType,\\n    BasicOrderType,\\n    ItemType,\\n    Side\\n} from \\\"./ConsiderationEnums.sol\\\";\\n\\n/**\\n * @dev An order contains eleven components: an offerer, a zone (or account that\\n *      can cancel the order or restrict who can fulfill the order depending on\\n *      the type), the order type (specifying partial fill support as well as\\n *      restricted order status), the start and end time, a hash that will be\\n *      provided to the zone when validating restricted orders, a salt, a key\\n *      corresponding to a given conduit, a counter, and an arbitrary number of\\n *      offer items that can be spent along with consideration items that must\\n *      be received by their respective recipient.\\n */\\nstruct OrderComponents {\\n    address offerer;\\n    address zone;\\n    OfferItem[] offer;\\n    ConsiderationItem[] consideration;\\n    OrderType orderType;\\n    uint256 startTime;\\n    uint256 endTime;\\n    bytes32 zoneHash;\\n    uint256 salt;\\n    bytes32 conduitKey;\\n    uint256 counter;\\n}\\n\\n/**\\n * @dev An offer item has five components: an item type (ETH or other native\\n *      tokens, ERC20, ERC721, and ERC1155, as well as criteria-based ERC721 and\\n *      ERC1155), a token address, a dual-purpose \\\"identifierOrCriteria\\\"\\n *      component that will either represent a tokenId or a merkle root\\n *      depending on the item type, and a start and end amount that support\\n *      increasing or decreasing amounts over the duration of the respective\\n *      order.\\n */\\nstruct OfferItem {\\n    ItemType itemType;\\n    address token;\\n    uint256 identifierOrCriteria;\\n    uint256 startAmount;\\n    uint256 endAmount;\\n}\\n\\n/**\\n * @dev A consideration item has the same five components as an offer item and\\n *      an additional sixth component designating the required recipient of the\\n *      item.\\n */\\nstruct ConsiderationItem {\\n    ItemType itemType;\\n    address token;\\n    uint256 identifierOrCriteria;\\n    uint256 startAmount;\\n    uint256 endAmount;\\n    address payable recipient;\\n}\\n\\n/**\\n * @dev A spent item is translated from a utilized offer item and has four\\n *      components: an item type (ETH or other native tokens, ERC20, ERC721, and\\n *      ERC1155), a token address, a tokenId, and an amount.\\n */\\nstruct SpentItem {\\n    ItemType itemType;\\n    address token;\\n    uint256 identifier;\\n    uint256 amount;\\n}\\n\\n/**\\n * @dev A received item is translated from a utilized consideration item and has\\n *      the same four components as a spent item, as well as an additional fifth\\n *      component designating the required recipient of the item.\\n */\\nstruct ReceivedItem {\\n    ItemType itemType;\\n    address token;\\n    uint256 identifier;\\n    uint256 amount;\\n    address payable recipient;\\n}\\n\\n/**\\n * @dev For basic orders involving ETH / native / ERC20 <=> ERC721 / ERC1155\\n *      matching, a group of six functions may be called that only requires a\\n *      subset of the usual order arguments. Note the use of a \\\"basicOrderType\\\"\\n *      enum; this represents both the usual order type as well as the \\\"route\\\"\\n *      of the basic order (a simple derivation function for the basic order\\n *      type is `basicOrderType = orderType + (4 * basicOrderRoute)`.)\\n */\\nstruct BasicOrderParameters {\\n    // calldata offset\\n    address considerationToken; // 0x24\\n    uint256 considerationIdentifier; // 0x44\\n    uint256 considerationAmount; // 0x64\\n    address payable offerer; // 0x84\\n    address zone; // 0xa4\\n    address offerToken; // 0xc4\\n    uint256 offerIdentifier; // 0xe4\\n    uint256 offerAmount; // 0x104\\n    BasicOrderType basicOrderType; // 0x124\\n    uint256 startTime; // 0x144\\n    uint256 endTime; // 0x164\\n    bytes32 zoneHash; // 0x184\\n    uint256 salt; // 0x1a4\\n    bytes32 offererConduitKey; // 0x1c4\\n    bytes32 fulfillerConduitKey; // 0x1e4\\n    uint256 totalOriginalAdditionalRecipients; // 0x204\\n    AdditionalRecipient[] additionalRecipients; // 0x224\\n    bytes signature; // 0x244\\n    // Total length, excluding dynamic array data: 0x264 (580)\\n}\\n\\n/**\\n * @dev Basic orders can supply any number of additional recipients, with the\\n *      implied assumption that they are supplied from the offered ETH (or other\\n *      native token) or ERC20 token for the order.\\n */\\nstruct AdditionalRecipient {\\n    uint256 amount;\\n    address payable recipient;\\n}\\n\\n/**\\n * @dev The full set of order components, with the exception of the counter,\\n *      must be supplied when fulfilling more sophisticated orders or groups of\\n *      orders. The total number of original consideration items must also be\\n *      supplied, as the caller may specify additional consideration items.\\n */\\nstruct OrderParameters {\\n    address offerer; // 0x00\\n    address zone; // 0x20\\n    OfferItem[] offer; // 0x40\\n    ConsiderationItem[] consideration; // 0x60\\n    OrderType orderType; // 0x80\\n    uint256 startTime; // 0xa0\\n    uint256 endTime; // 0xc0\\n    bytes32 zoneHash; // 0xe0\\n    uint256 salt; // 0x100\\n    bytes32 conduitKey; // 0x120\\n    uint256 totalOriginalConsiderationItems; // 0x140\\n    // offer.length                          // 0x160\\n}\\n\\n/**\\n * @dev Orders require a signature in addition to the other order parameters.\\n */\\nstruct Order {\\n    OrderParameters parameters;\\n    bytes signature;\\n}\\n\\n/**\\n * @dev Advanced orders include a numerator (i.e. a fraction to attempt to fill)\\n *      and a denominator (the total size of the order) in addition to the\\n *      signature and other order parameters. It also supports an optional field\\n *      for supplying extra data; this data will be included in a staticcall to\\n *      `isValidOrderIncludingExtraData` on the zone for the order if the order\\n *      type is restricted and the offerer or zone are not the caller.\\n */\\nstruct AdvancedOrder {\\n    OrderParameters parameters;\\n    uint120 numerator;\\n    uint120 denominator;\\n    bytes signature;\\n    bytes extraData;\\n}\\n\\n/**\\n * @dev Orders can be validated (either explicitly via `validate`, or as a\\n *      consequence of a full or partial fill), specifically cancelled (they can\\n *      also be cancelled in bulk via incrementing a per-zone counter), and\\n *      partially or fully filled (with the fraction filled represented by a\\n *      numerator and denominator).\\n */\\nstruct OrderStatus {\\n    bool isValidated;\\n    bool isCancelled;\\n    uint120 numerator;\\n    uint120 denominator;\\n}\\n\\n/**\\n * @dev A criteria resolver specifies an order, side (offer vs. consideration),\\n *      and item index. It then provides a chosen identifier (i.e. tokenId)\\n *      alongside a merkle proof demonstrating the identifier meets the required\\n *      criteria.\\n */\\nstruct CriteriaResolver {\\n    uint256 orderIndex;\\n    Side side;\\n    uint256 index;\\n    uint256 identifier;\\n    bytes32[] criteriaProof;\\n}\\n\\n/**\\n * @dev A fulfillment is applied to a group of orders. It decrements a series of\\n *      offer and consideration items, then generates a single execution\\n *      element. A given fulfillment can be applied to as many offer and\\n *      consideration items as desired, but must contain at least one offer and\\n *      at least one consideration that match. The fulfillment must also remain\\n *      consistent on all key parameters across all offer items (same offerer,\\n *      token, type, tokenId, and conduit preference) as well as across all\\n *      consideration items (token, type, tokenId, and recipient).\\n */\\nstruct Fulfillment {\\n    FulfillmentComponent[] offerComponents;\\n    FulfillmentComponent[] considerationComponents;\\n}\\n\\n/**\\n * @dev Each fulfillment component contains one index referencing a specific\\n *      order and another referencing a specific offer or consideration item.\\n */\\nstruct FulfillmentComponent {\\n    uint256 orderIndex;\\n    uint256 itemIndex;\\n}\\n\\n/**\\n * @dev An execution is triggered once all consideration items have been zeroed\\n *      out. It sends the item in question from the offerer to the item's\\n *      recipient, optionally sourcing approvals from either this contract\\n *      directly or from the offerer's chosen conduit if one is specified. An\\n *      execution is not provided as an argument, but rather is derived via\\n *      orders, criteria resolvers, and fulfillments (where the total number of\\n *      executions will be less than or equal to the total number of indicated\\n *      fulfillments) and returned as part of `matchOrders`.\\n */\\nstruct Execution {\\n    ReceivedItem item;\\n    address offerer;\\n    bytes32 conduitKey;\\n}\\n\",\"keccak256\":\"0x6f2a4c36c003053164bc491c1e5501d6e76478d83e4f88abd42ac9a81ca6dfeb\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60a0806040523461006457336080527fa45f47fdea8a1efdd9029a5691c7f759c32b7c698632b563573e155625d16933600082a16114e6908161006a82396080518181816104870152818161085b015281816108d8015281816109a70152610bf30152f35b600080fdfe608080604052600436101561001357600080fd5b60003560e01c9081630e1d31dc146100b6575080632718034d146100ad57806333131570146100a4578063570ca7351461009b57806365c4eb721461009257806376a67a511461008957806384385c6f146100805763e5c27af114610078575b600080fd5b610073610a55565b50610073610952565b50610073610883565b506100736105bc565b50610073610569565b506100736104af565b5061007361026a565b346100735760807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610073576020906100f3602435610123565b6100fe604435610123565b7f0e1d31dc000000000000000000000000000000000000000000000000000000008152f35b73ffffffffffffffffffffffffffffffffffffffff81160361007357565b359061014c82610123565b565b9181601f840112156100735782359167ffffffffffffffff8311610073576020808501948460051b01011161007357565b507f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b9060068210156101bc5752565b6101c461017f565b52565b60208082019080835283518092528060408094019401926000905b8382106101f157505050505090565b90919293948360e0600192848951805161020c8482516101af565b73ffffffffffffffffffffffffffffffffffffffff9081878201511687860152838101518486015260608082015190860152816080809201511690850152858201511660a0840152015160c0820152019601920190939291936101e2565b507ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc606081360112610073576004356102a281610123565b67ffffffffffffffff91602435838111610073576102c490369060040161014e565b929093604435908111610073576102df90369060040161014e565b73ffffffffffffffffffffffffffffffffffffffff9591866000541633141580610483575b610459576040948551967fa817440400000000000000000000000000000000000000000000000000000000885280604489018860048b015252606488019060648160051b8a01019580926000915b8383106103d35750505061039f89896000828e818d8161037d8f8f8f8f858403016024860152611285565b03923491165af19182156103c6575b6000926103a3575b5051918291826101c7565b0390f35b6103bf91923d8091833e6103b78183610c90565b810190611019565b9083610394565b6103ce611001565b61038c565b909192939761043d8b61044a838f6104178e7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9c61042e9360019903018a52886111c1565b936104228580610fcf565b90808452830190610ee1565b90602094848680960190611132565b9185818503910152611182565b9a019301930191939290610352565b60046040517fccea9e6f000000000000000000000000000000000000000000000000000000008152fd5b50867f000000000000000000000000000000000000000000000000000000000000000016331415610304565b5034610073577ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc60a081360112610073576104eb602435610123565b60443567ffffffffffffffff918282116100735760a09136030112610073576064358181116100735761052290369060040161014e565b50506084359081116100735761053c90369060040161014e565b50506040517f0e1d31dc000000000000000000000000000000000000000000000000000000008152602090f35b50346100735760007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261007357602073ffffffffffffffffffffffffffffffffffffffff60005416604051908152f35b5060807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc81813601126100735760049081356105f781610123565b67ffffffffffffffff9160243583811161007357610618903690860161014e565b95909360443581811161007357610632903690880161014e565b9290916064359081116100735761064c903690890161014e565b93909273ffffffffffffffffffffffffffffffffffffffff998a6000541633141580610857575b61082e5797989260409889519a7f55944a42000000000000000000000000000000000000000000000000000000008c528160648d018d606098899101525260848c019560848d8460051b01019682946000935b85851061075357505050505050508561039f9a958a97956106fb868a989661070a968a988960009f9b030160248a01526113c4565b92858403016044860152611285565b03923491165af1918215610746575b60009261072b575051918291826101c7565b61073f91923d8091833e6103b78183610c90565b9038610394565b61074e611001565b610719565b909192939495988f8f90917fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7c600193820301865261081d6107948d86611351565b6107ae6107a18280610fcf565b60a0808652850190610ee1565b926108106108066effffffffffffffffffffffffffffff956020978789986107d78a8901611335565b16898701526107e7828801611335565b16908501528c6107f981870187611132565b9186840390870152611182565b9289810190611132565b9189818503910152611182565b9b01940195019392959491906106c6565b896040517fccea9e6f000000000000000000000000000000000000000000000000000000008152fd5b508a7f000000000000000000000000000000000000000000000000000000000000000016331415610673565b50346100735760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610073576004356108bf81610123565b73ffffffffffffffffffffffffffffffffffffffff90817f0000000000000000000000000000000000000000000000000000000000000000163303610928577f9e87fac88ff661f02d44f95383c817fece4bce600a3dab7a54406878b965e7526000604051a116ff5b60046040517f6d5769be000000000000000000000000000000000000000000000000000000008152fd5b50346100735760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126100735760043561098e81610123565b73ffffffffffffffffffffffffffffffffffffffff90817f000000000000000000000000000000000000000000000000000000000000000016330361092857168015610a2b576020817fb3b3f5f64ab192e4b5fefde1f51ce9733bbdcf831951543b325aebd49cc27ec4927fffffffffffffffffffffffff00000000000000000000000000000000000000006000541617600055604051908152a1005b60046040517f5384e6f5000000000000000000000000000000000000000000000000000000008152fd5b50346100735760407ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261007357600435610a9181610123565b60243567ffffffffffffffff811161007357610ab190369060040161014e565b9073ffffffffffffffffffffffffffffffffffffffff806000541633141580610bef575b61045957604051917ffd9f1e1000000000000000000000000000000000000000000000000000000000835260248301938060209586600487015252604484019060448160051b8601019280926000915b838310610b9d5761039f898981818e8160008e828f0393165af1918215610b90575b600092610b63575b505060405190151581529081906020820190565b610b829250803d10610b89575b610b7a8183610c90565b810190610cd1565b8280610b4f565b503d610b70565b610b98611001565b610b47565b90919293948880610be0837fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbc8c60019603018752610bdb8a87610fcf565b610ee1565b97019301930191939290610b25565b50807f000000000000000000000000000000000000000000000000000000000000000016331415610ad5565b507f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6060810190811067ffffffffffffffff821117610c6757604052565b610c6f610c1b565b604052565b60a0810190811067ffffffffffffffff821117610c6757604052565b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff821117610c6757604052565b90816020910312610073575180151581036100735790565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff82116100735760a082023603831361007357565b6006111561007357565b9190808252602080920192916000905b828210610d64575050505090565b9091929380610d7f6001928735610d7a81610d3c565b6101af565b73ffffffffffffffffffffffffffffffffffffffff83870135610da181610123565b168184015260408681013590820152606080870135908201526080808701359082015260a0908101950193920190610d56565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff82116100735760c082023603831361007357565b9190808252602080920192916000905b828210610e45575050505090565b9091929380610e5b6001928735610d7a81610d3c565b82860135610e6881610123565b73ffffffffffffffffffffffffffffffffffffffff8091168483015260408088013590830152606080880135908301526080808801359083015260a09081880135610eb281610123565b169082015260c0908101950193920190610e37565b3590600482101561007357565b9060048210156101bc5752565b90610f0981610eef84610141565b73ffffffffffffffffffffffffffffffffffffffff169052565b610f35610f1860208401610141565b73ffffffffffffffffffffffffffffffffffffffff166020830152565b610f74610f59610f486040850185610ce9565b610160806040870152850191610d46565b610f666060850185610dd4565b908483036060860152610e27565b91610f8e610f8460808301610ec7565b6080840190610ed4565b60a081013560a083015260c081013560c083015260e081013560e0830152610100808201359083015261012080820135908301526101408091013591015290565b90357ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffea182360301811215610073570190565b506040513d6000823e3d90fd5b519061014c82610123565b6020808284031261007357815167ffffffffffffffff9283821161007357019083601f83011215610073578151928311611125575b604093845194611063838660051b0187610c90565b848652828601918360e080970286010194818611610073578401925b858410611090575050505050505090565b838203878112610073578351916110a683610c4b565b60a080921261007357889261110d889387516110c181610c74565b89516110cc81610d3c565b8152858a01516110db81610123565b86820152888a0151898201526060808b0151908201526080808b01519061110182610123565b8201528352880161100e565b8382015260c08701518682015281520193019261107f565b61112d610c1b565b61104e565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff821161007357813603831361007357565b601f82602094937fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0938186528686013760008582860101520116010190565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc182360301811215610073570190565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff8211610073578160061b3603831361007357565b9190808252602080920192916000905b828210611264575050505090565b83358552838101358582015260409485019490930192600190910190611256565b9082818152602080910193818360051b82010194846000925b8584106112af575050505050505090565b909192939495968580611324837fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe086600196030188526112ef8c886111c1565b9061131761130d61130084806111f3565b6040808652850191611246565b92858101906111f3565b9185818503910152611246565b99019401940192959493919061129e565b35906effffffffffffffffffffffffffffff8216820361007357565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6182360301811215610073570190565b90918281527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff83116100735760209260051b80928483013701016000815290565b90808352602080930190819360059282841b810195856000925b8584106113f057505050505050505090565b909192939495969781810384526114078984611351565b8035825286810135600281101561007357878301526040808201359083015260608082013590830152608090818101357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357019087823592019267ffffffffffffffff831161007357828b1b36038413610073576001938993849361149e9360a080928201520191611383565b9a0194019401929695949391906113de56fea2646970667358221220e84559c3f56d11012c527592a3028539d6a9bd490aeaf77c13db47f1c001dbb864736f6c634300080e0033",
+  "deployedBytecode": "0x608080604052600436101561001357600080fd5b60003560e01c9081630e1d31dc146100b6575080632718034d146100ad57806333131570146100a4578063570ca7351461009b57806365c4eb721461009257806376a67a511461008957806384385c6f146100805763e5c27af114610078575b600080fd5b610073610a55565b50610073610952565b50610073610883565b506100736105bc565b50610073610569565b506100736104af565b5061007361026a565b346100735760807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610073576020906100f3602435610123565b6100fe604435610123565b7f0e1d31dc000000000000000000000000000000000000000000000000000000008152f35b73ffffffffffffffffffffffffffffffffffffffff81160361007357565b359061014c82610123565b565b9181601f840112156100735782359167ffffffffffffffff8311610073576020808501948460051b01011161007357565b507f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b9060068210156101bc5752565b6101c461017f565b52565b60208082019080835283518092528060408094019401926000905b8382106101f157505050505090565b90919293948360e0600192848951805161020c8482516101af565b73ffffffffffffffffffffffffffffffffffffffff9081878201511687860152838101518486015260608082015190860152816080809201511690850152858201511660a0840152015160c0820152019601920190939291936101e2565b507ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc606081360112610073576004356102a281610123565b67ffffffffffffffff91602435838111610073576102c490369060040161014e565b929093604435908111610073576102df90369060040161014e565b73ffffffffffffffffffffffffffffffffffffffff9591866000541633141580610483575b610459576040948551967fa817440400000000000000000000000000000000000000000000000000000000885280604489018860048b015252606488019060648160051b8a01019580926000915b8383106103d35750505061039f89896000828e818d8161037d8f8f8f8f858403016024860152611285565b03923491165af19182156103c6575b6000926103a3575b5051918291826101c7565b0390f35b6103bf91923d8091833e6103b78183610c90565b810190611019565b9083610394565b6103ce611001565b61038c565b909192939761043d8b61044a838f6104178e7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9c61042e9360019903018a52886111c1565b936104228580610fcf565b90808452830190610ee1565b90602094848680960190611132565b9185818503910152611182565b9a019301930191939290610352565b60046040517fccea9e6f000000000000000000000000000000000000000000000000000000008152fd5b50867f000000000000000000000000000000000000000000000000000000000000000016331415610304565b5034610073577ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc60a081360112610073576104eb602435610123565b60443567ffffffffffffffff918282116100735760a09136030112610073576064358181116100735761052290369060040161014e565b50506084359081116100735761053c90369060040161014e565b50506040517f0e1d31dc000000000000000000000000000000000000000000000000000000008152602090f35b50346100735760007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261007357602073ffffffffffffffffffffffffffffffffffffffff60005416604051908152f35b5060807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc81813601126100735760049081356105f781610123565b67ffffffffffffffff9160243583811161007357610618903690860161014e565b95909360443581811161007357610632903690880161014e565b9290916064359081116100735761064c903690890161014e565b93909273ffffffffffffffffffffffffffffffffffffffff998a6000541633141580610857575b61082e5797989260409889519a7f55944a42000000000000000000000000000000000000000000000000000000008c528160648d018d606098899101525260848c019560848d8460051b01019682946000935b85851061075357505050505050508561039f9a958a97956106fb868a989661070a968a988960009f9b030160248a01526113c4565b92858403016044860152611285565b03923491165af1918215610746575b60009261072b575051918291826101c7565b61073f91923d8091833e6103b78183610c90565b9038610394565b61074e611001565b610719565b909192939495988f8f90917fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7c600193820301865261081d6107948d86611351565b6107ae6107a18280610fcf565b60a0808652850190610ee1565b926108106108066effffffffffffffffffffffffffffff956020978789986107d78a8901611335565b16898701526107e7828801611335565b16908501528c6107f981870187611132565b9186840390870152611182565b9289810190611132565b9189818503910152611182565b9b01940195019392959491906106c6565b896040517fccea9e6f000000000000000000000000000000000000000000000000000000008152fd5b508a7f000000000000000000000000000000000000000000000000000000000000000016331415610673565b50346100735760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610073576004356108bf81610123565b73ffffffffffffffffffffffffffffffffffffffff90817f0000000000000000000000000000000000000000000000000000000000000000163303610928577f9e87fac88ff661f02d44f95383c817fece4bce600a3dab7a54406878b965e7526000604051a116ff5b60046040517f6d5769be000000000000000000000000000000000000000000000000000000008152fd5b50346100735760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126100735760043561098e81610123565b73ffffffffffffffffffffffffffffffffffffffff90817f000000000000000000000000000000000000000000000000000000000000000016330361092857168015610a2b576020817fb3b3f5f64ab192e4b5fefde1f51ce9733bbdcf831951543b325aebd49cc27ec4927fffffffffffffffffffffffff00000000000000000000000000000000000000006000541617600055604051908152a1005b60046040517f5384e6f5000000000000000000000000000000000000000000000000000000008152fd5b50346100735760407ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261007357600435610a9181610123565b60243567ffffffffffffffff811161007357610ab190369060040161014e565b9073ffffffffffffffffffffffffffffffffffffffff806000541633141580610bef575b61045957604051917ffd9f1e1000000000000000000000000000000000000000000000000000000000835260248301938060209586600487015252604484019060448160051b8601019280926000915b838310610b9d5761039f898981818e8160008e828f0393165af1918215610b90575b600092610b63575b505060405190151581529081906020820190565b610b829250803d10610b89575b610b7a8183610c90565b810190610cd1565b8280610b4f565b503d610b70565b610b98611001565b610b47565b90919293948880610be0837fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbc8c60019603018752610bdb8a87610fcf565b610ee1565b97019301930191939290610b25565b50807f000000000000000000000000000000000000000000000000000000000000000016331415610ad5565b507f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6060810190811067ffffffffffffffff821117610c6757604052565b610c6f610c1b565b604052565b60a0810190811067ffffffffffffffff821117610c6757604052565b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff821117610c6757604052565b90816020910312610073575180151581036100735790565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff82116100735760a082023603831361007357565b6006111561007357565b9190808252602080920192916000905b828210610d64575050505090565b9091929380610d7f6001928735610d7a81610d3c565b6101af565b73ffffffffffffffffffffffffffffffffffffffff83870135610da181610123565b168184015260408681013590820152606080870135908201526080808701359082015260a0908101950193920190610d56565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff82116100735760c082023603831361007357565b9190808252602080920192916000905b828210610e45575050505090565b9091929380610e5b6001928735610d7a81610d3c565b82860135610e6881610123565b73ffffffffffffffffffffffffffffffffffffffff8091168483015260408088013590830152606080880135908301526080808801359083015260a09081880135610eb281610123565b169082015260c0908101950193920190610e37565b3590600482101561007357565b9060048210156101bc5752565b90610f0981610eef84610141565b73ffffffffffffffffffffffffffffffffffffffff169052565b610f35610f1860208401610141565b73ffffffffffffffffffffffffffffffffffffffff166020830152565b610f74610f59610f486040850185610ce9565b610160806040870152850191610d46565b610f666060850185610dd4565b908483036060860152610e27565b91610f8e610f8460808301610ec7565b6080840190610ed4565b60a081013560a083015260c081013560c083015260e081013560e0830152610100808201359083015261012080820135908301526101408091013591015290565b90357ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffea182360301811215610073570190565b506040513d6000823e3d90fd5b519061014c82610123565b6020808284031261007357815167ffffffffffffffff9283821161007357019083601f83011215610073578151928311611125575b604093845194611063838660051b0187610c90565b848652828601918360e080970286010194818611610073578401925b858410611090575050505050505090565b838203878112610073578351916110a683610c4b565b60a080921261007357889261110d889387516110c181610c74565b89516110cc81610d3c565b8152858a01516110db81610123565b86820152888a0151898201526060808b0151908201526080808b01519061110182610123565b8201528352880161100e565b8382015260c08701518682015281520193019261107f565b61112d610c1b565b61104e565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff821161007357813603831361007357565b601f82602094937fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0938186528686013760008582860101520116010190565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc182360301811215610073570190565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357016020813591019167ffffffffffffffff8211610073578160061b3603831361007357565b9190808252602080920192916000905b828210611264575050505090565b83358552838101358582015260409485019490930192600190910190611256565b9082818152602080910193818360051b82010194846000925b8584106112af575050505050505090565b909192939495968580611324837fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe086600196030188526112ef8c886111c1565b9061131761130d61130084806111f3565b6040808652850191611246565b92858101906111f3565b9185818503910152611246565b99019401940192959493919061129e565b35906effffffffffffffffffffffffffffff8216820361007357565b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6182360301811215610073570190565b90918281527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff83116100735760209260051b80928483013701016000815290565b90808352602080930190819360059282841b810195856000925b8584106113f057505050505050505090565b909192939495969781810384526114078984611351565b8035825286810135600281101561007357878301526040808201359083015260608082013590830152608090818101357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561007357019087823592019267ffffffffffffffff831161007357828b1b36038413610073576001938993849361149e9360a080928201520191611383565b9a0194019401929695949391906113de56fea2646970667358221220e84559c3f56d11012c527592a3028539d6a9bd490aeaf77c13db47f1c001dbb864736f6c634300080e0033",
+  "devdoc": {
+    "author": "cupOJoseph, BCLeFevre, ryanio",
+    "errors": {
+      "CallerIsNotOperator()": [
+        {
+          "details": "Revert with an error when the caller does not have the operator role"
+        }
+      ],
+      "CallerIsNotOwner()": [
+        {
+          "details": "Revert with an error when the caller does not have the _owner role"
+        }
+      ],
+      "CallerIsNotPotentialOwner()": [
+        {
+          "details": "Revert with an error when the caller does not have      the potentialOwner role."
+        }
+      ],
+      "InvalidController()": [
+        {
+          "details": "Revert with an error when attempting to pause the zone or update the      operator while the caller is not the controller of the zone."
+        }
+      ],
+      "InvalidOperator()": [
+        {
+          "details": "Revert with an error when attempting to call an operation      while the caller is not the controller or operator of the zone."
+        }
+      ],
+      "InvalidPauser()": [
+        {
+          "details": "Revert with an error when attempting to pause the zone      while the caller is not the owner or pauser of the zone."
+        }
+      ],
+      "OwnerCanNotBeSetAsZero()": [
+        {
+          "details": "Revert with an error when attempting to set the new potential owner      as the 0 address."
+        }
+      ],
+      "PauserCanNotBeSetAsZero()": [
+        {
+          "details": "Revert with an error when attempting to set the new potential pauser      as the 0 address."
+        }
+      ],
+      "ZoneAlreadyExists(address)": [
+        {
+          "details": "Revert with an error when attempting to deploy a zone that is      currently deployed."
+        }
+      ]
+    },
+    "kind": "dev",
+    "methods": {
+      "assignOperator(address)": {
+        "params": {
+          "operatorToAssign": "The address to assign as the operator."
+        }
+      },
+      "cancelOrders(address,(address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[])": {
+        "params": {
+          "orders": "The orders to cancel.",
+          "seaport": "The Seaport address."
+        },
+        "returns": {
+          "cancelled": "A boolean indicating whether the supplied orders have                   been successfully cancelled."
+        }
+      },
+      "executeMatchAdvancedOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[])": {
+        "params": {
+          "criteriaResolvers": "An array where each element contains a reference                          to a specific order as well as that order's                          offer or consideration, a token identifier, and                          a proof that the supplied token identifier is                          contained in the order's merkle root.",
+          "fulfillments": "An array of elements allocating offer components                          to consideration components.",
+          "orders": "The orders to match.",
+          "seaport": "The Seaport address."
+        },
+        "returns": {
+          "executions": "An array of elements indicating the sequence of                    transfers performed as part of matching the given                    orders."
+        }
+      },
+      "executeMatchOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),bytes)[],((uint256,uint256)[],(uint256,uint256)[])[])": {
+        "params": {
+          "fulfillments": "An array of elements allocating offer components                     to consideration components.",
+          "orders": "The orders to match.",
+          "seaport": "The Seaport address."
+        },
+        "returns": {
+          "executions": "An array of elements indicating the sequence of                    transfers performed as part of matching the given                    orders."
+        }
+      },
+      "isValidOrder(bytes32,address,address,bytes32)": {
+        "details": "This function is called by Seaport whenever extraData is not      provided by the caller.",
+        "params": {
+          "caller": "The caller in question.",
+          "offerer": "The offerer in question.",
+          "orderHash": "The hash of the order.",
+          "zoneHash": "The hash to provide upon calling the zone."
+        },
+        "returns": {
+          "validOrderMagicValue": "A magic value indicating if the order is                              currently valid."
+        }
+      },
+      "isValidOrderIncludingExtraData(bytes32,address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),bytes32[],(uint256,uint8,uint256,uint256,bytes32[])[])": {
+        "details": "This function is called by Seaport whenever any extraData is      provided by the caller.",
+        "params": {
+          "caller": "The caller in question.",
+          "criteriaResolvers": "The criteria resolvers corresponding to                          the order.",
+          "order": "The order in question.",
+          "orderHash": "The hash of the order.",
+          "priorOrderHashes": "The order hashes of each order supplied prior to                          the current order as part of a \"match\" variety                          of order fulfillment."
+        },
+        "returns": {
+          "validOrderMagicValue": "A magic value indicating if the order is                              currently valid."
+        }
+      }
+    },
+    "title": "PausableZone",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "assignOperator(address)": {
+        "notice": "Assign the given address with the ability to operate the zone."
+      },
+      "cancelOrders(address,(address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256)[])": {
+        "notice": "Cancel an arbitrary number of orders that have agreed to use the         contract as their zone."
+      },
+      "constructor": {
+        "notice": "Set the deployer as the controller of the zone."
+      },
+      "executeMatchAdvancedOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes)[],(uint256,uint8,uint256,uint256,bytes32[])[],((uint256,uint256)[],(uint256,uint256)[])[])": {
+        "notice": "Execute an arbitrary number of matched advanced orders,         each with an arbitrary number of items for offer and         consideration along with a set of fulfillments allocating         offer components to consideration components."
+      },
+      "executeMatchOrders(address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),bytes)[],((uint256,uint256)[],(uint256,uint256)[])[])": {
+        "notice": "Execute an arbitrary number of matched orders, each with         an arbitrary number of items for offer and consideration         along with a set of fulfillments allocating offer components         to consideration components."
+      },
+      "isValidOrder(bytes32,address,address,bytes32)": {
+        "notice": "Check if a given order is currently valid."
+      },
+      "isValidOrderIncludingExtraData(bytes32,address,((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),bytes32[],(uint256,uint8,uint256,uint256,bytes32[])[])": {
+        "notice": "Check if a given order including extraData is currently valid."
+      },
+      "pause(address)": {
+        "notice": "Pause this contract, safely stopping orders from using         the contract as a zone. Restricted orders with this address as a         zone will not be fulfillable unless the zone is redeployed to the         same address."
+      }
+    },
+    "notice": "PausableZone is a simple zone implementation that approves every         order. It can be self-destructed by its controller to pause         restricted orders that have it set as their zone.",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 4022,
+        "contract": "contracts/seaport/Zones/PausableZone.sol:PausableZone",
+        "label": "operator",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}

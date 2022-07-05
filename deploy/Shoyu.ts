@@ -91,7 +91,12 @@ const deployFunction: DeployFunction = async function ({
   });
 
   try {
-    const shoyu = await deployments.get("Shoyu");
+    const shoyu = await ethers.getContract("Shoyu");
+
+    const adapterRegistryAddress = await shoyu.adapterRegistry();
+
+    if (adapterRegistryAddress !== adapterRegistry.address) throw new Error();
+
     console.log('reusing "Shoyu" at', shoyu.address);
   } catch (e) {
     const shoyuFactory = await ethers.getContractFactory("Shoyu");
@@ -109,6 +114,7 @@ const deployFunction: DeployFunction = async function ({
 
     const artifact = await deployments.getExtendedArtifact("Shoyu");
     await save("Shoyu", { address: shoyu.address, ...artifact });
+
     console.log("Shoyu deployed at address", shoyu.address);
   }
 };
