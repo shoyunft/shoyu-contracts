@@ -138,7 +138,12 @@ describe(`Shoyu exchange test suite`, function () {
       transformationAdapter,
       seaportAdapter,
       bentobox,
-    } = await shoyuFixture(owner, marketplaceContract, conduitController));
+    } = await shoyuFixture(
+      owner,
+      marketplaceContract,
+      conduitController,
+      testERC20
+    ));
   });
 
   describe("Shoyu tests", async () => {
@@ -388,12 +393,16 @@ describe(`Shoyu exchange test suite`, function () {
           marketplaceContract.address
         );
 
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
+        const offer = [getTestItem20(parseEther("1"), parseEther("1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
 
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
+        await testERC20
+          .connect(seller)
+          .approve(marketplaceContract.address, MaxUint256);
 
         const { order, orderHash, value } = await createOrder(
           buyer,
@@ -417,6 +426,7 @@ describe(`Shoyu exchange test suite`, function () {
               fulfiller: seller.address,
             },
           ]);
+
           return receipt;
         });
       });
@@ -1469,12 +1479,12 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
-
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
 
         const { order, orderHash } = await createOrder(
           buyer,
@@ -1596,13 +1606,11 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
-          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-        ];
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
 
         const consideration = [
           getTestItem1155(nftId, amount, amount, undefined, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
 
         const { order, orderHash } = await createOrder(
@@ -1725,11 +1733,15 @@ describe(`Shoyu exchange test suite`, function () {
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
         const offer = [
           getTestItem20(
-            parseEther("1"),
-            parseEther("1"),
+            parseEther("1.1"),
+            parseEther("1.1"),
             undefined,
             testWETH.address
           ),
+        ];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(
             parseEther(".1"),
             parseEther(".1"),
@@ -1737,8 +1749,6 @@ describe(`Shoyu exchange test suite`, function () {
             testWETH.address
           ),
         ];
-
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
 
         const { order, orderHash } = await createOrder(
           buyer,
@@ -1843,12 +1853,12 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
-
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
 
         const { order, orderHash } = await createOrder(
           buyer,
@@ -1974,13 +1984,11 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
-          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-        ];
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
 
         const consideration = [
           getTestItem1155(nftId, amount, amount, undefined, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
 
         const { order, orderHash } = await createOrder(
@@ -2102,12 +2110,12 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
-
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
 
         const { order, orderHash } = await createOrder(
           buyer,
@@ -2232,12 +2240,12 @@ describe(`Shoyu exchange test suite`, function () {
         );
 
         // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-        const offer = [
-          getTestItem20(parseEther("1"), parseEther("1")),
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
           getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
         ];
-
-        const consideration = [getTestItem721(nftId, 1, 1, buyer.address)];
 
         const { order, orderHash } = await createOrder(
           buyer,

@@ -6,7 +6,8 @@ import { deployContract } from "../contracts";
 export const shoyuFixture = async (
   owner: Signer,
   seaport: Contract,
-  conduitController: Contract
+  conduitController: Contract,
+  testERC20: Contract
 ) => {
   await deployments.fixture("DeploySushiswap");
 
@@ -57,6 +58,12 @@ export const shoyuFixture = async (
 
   await shoyuContract.approveERC20(
     testWETH.address,
+    seaport.address,
+    MaxUint256
+  );
+
+  await shoyuContract.approveERC20(
+    testERC20.address,
     seaport.address,
     MaxUint256
   );
