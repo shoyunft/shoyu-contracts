@@ -16,7 +16,16 @@ contract TransformationAdapter is LegacySwapAdapter {
         WETH = _weth;
     }
 
-    // transfers funds from msg.sender & performs swaps
+    /// @dev This function swaps ERC20 tokens from msg.sender
+    ///      for an exact amount of output tokens, sent
+    ///      to the specified recipient.
+    /// @param amountOut        The exact amount of output token to receive.
+    /// @param amountInMax      The maximum amount of input to be spent.
+    /// @param path             The swap path.
+    /// @param to               The recipient to receive output token.
+    /// @param tokenSource      The token / approval source for input token.
+    /// @param transferData     Additional data required depending on `source`.
+    /// @param unwrapNative     Flag to unwrap for native token if output token is WETH.
     function swapExactOut(
         uint256 amountOut,
         uint256 amountInMax,
@@ -43,7 +52,14 @@ contract TransformationAdapter is LegacySwapAdapter {
         }
     }
 
-    // requires path[0] to have been sent to address(this)
+    /// @dev This function swaps an exact amount of tokens
+    ///      from address(this) and sends the output token
+    ///      to the specified recipient.
+    /// @param amountIn         The exact amount of input token to be spent.
+    /// @param amountOutMin     The minimum amount of output token to be received.
+    /// @param path             The swap path.
+    /// @param to               The recipient of output token.
+    /// @param unwrapNative     Flag to unwrap for native token if output token is WETH.
     function swapExactIn(
         uint256 amountIn,
         uint256 amountOutMin,
@@ -67,7 +83,10 @@ contract TransformationAdapter is LegacySwapAdapter {
 
     }
 
-    // requires WETH to have been sent to address(this)
+    /// @dev This function unwraps WETH held by address(this)
+    ///      and transfers ETH to the specified recipient.
+    /// @param amount       The amount of WETH to be unwrapped.
+    /// @param to           The ETH recipient.
     function unwrapNativeToken(
         uint256 amount,
         address payable to
@@ -78,7 +97,8 @@ contract TransformationAdapter is LegacySwapAdapter {
         }
     }
 
-    // requires ETH to have been sent to address(this)
+    /// @dev This function wraps ETH held by address(this).
+    /// @param amount       The amount of ETH to wrap
     function wrapNativeToken(uint256 amount) public payable {
         IWETH(WETH).deposit{value: amount}();
     }

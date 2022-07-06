@@ -24,7 +24,15 @@ contract LegacySwapAdapter is TransferAdapter {
         pairCodeHash = _pairCodeHash;
     }
 
-    // transfers funds from msg.sender and performs swap
+    /// @dev This function transfers the input token from msg.sender and
+    ///      performs the swaps outlined in `path`. An exact amount of the
+    ///      output token is sent to the specified recipient.
+    /// @param amountOut        The exact amount of output token to receive.
+    /// @param amountInMax      The maximum amount of input to be spent.
+    /// @param path             The swap path.
+    /// @param to               The recipient to receive output token.
+    /// @param tokenSource      The token / approval source for input token.
+    /// @param transferData     Additional data required depending on `source`.
     function _legacySwapExactOut(
         uint256 amountOut,
         uint256 amountInMax,
@@ -59,7 +67,13 @@ contract LegacySwapAdapter is TransferAdapter {
         _swap(amounts, path, to);
     }
 
-    // requires path[0] to have already been sent to address(this)
+    /// @dev This function transfers an exact amount of the input token
+    ///      from address(this) and performs the swaps outlined in `path`.
+    ///      The output token is sent to the specified recipient.
+    /// @param amountIn         The exact amount of input token to be spent.
+    /// @param amountOutMin     The minimum amount of output token to be received.
+    /// @param path             The swap path.
+    /// @param to               The recipient of output token.
     function _legacySwapExactIn(
         uint256 amountIn,
         uint256 amountOutMin,
@@ -89,7 +103,13 @@ contract LegacySwapAdapter is TransferAdapter {
         _swap(amounts, path, to);
     }
 
-    // requires the initial amount to have already been sent to the first pair
+    /// @dev Performs swaps as outlined in `path` and sends the output
+    ///      token to the specified recipient.
+    /// @notice Requires the initial amount to have already been sent to the
+    ///         first pair.
+    /// @param amounts  The amounts to be swapped.
+    /// @param path     The swap path.
+    /// @param _to      The recipient of output token.
     function _swap(
         uint256[] memory amounts,
         address[] memory path,

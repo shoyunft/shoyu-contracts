@@ -7,7 +7,7 @@ Shoyu
 To install dependencies and compile contracts:
 
 ```bash
-git clone https://github.com/ProjectOpenSea/seaport && cd seaport
+git clone https://github.com/shoyunft/shoyu-contracts && cd shoyu-contracts
 yarn install
 yarn build
 ```

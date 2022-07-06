@@ -24,7 +24,8 @@ contract ConduitAdapter {
         _CONDUIT_CONTROLLER = conduitController;
     }
 
-    // Derive the conduit address from the deployer, conduit key and creation code hash.
+    /// @dev This function derives the conduit address from the deployer,
+    ///      conduit key, and creation code hash.
     function _getConduit(bytes32 conduitKey) internal view returns (address conduit) {
         conduit = address(
             uint160(
@@ -42,6 +43,14 @@ contract ConduitAdapter {
         );
     }
 
+    /// @dev This function transfers an ERC20 using a Seaport
+    ///      Conduit to source approval.
+    /// @notice Only use `msg.sender` or `address(this)` in the from param.
+    /// @param token        The ERC20 token to transfer.
+    /// @param from         The originator of the transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param amount       The amount of ERC20 to be sent.
+    /// @param conduitKey   The key of the conduit to used.
     function _transferERC20WithConduit(
         address token,
         address from,
@@ -65,6 +74,14 @@ contract ConduitAdapter {
         ConduitInterface(conduit).execute(conduitTransfers);
     }
 
+    /// @dev This function transfers an ERC721 token using a Seaport
+    ///      Conduit to source approval.
+    /// @notice Only use `msg.sender` or `address(this)` in the from param.
+    /// @param token        The ERC721 token to transfer.
+    /// @param from         The originator of the transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param tokenId      The tokenId of the ERC721 to be sent.
+    /// @param conduitKey   The key of the conduit to used.
     function _transferERC721WithConduit(
         address token,
         address from,
@@ -88,6 +105,15 @@ contract ConduitAdapter {
         ConduitInterface(conduit).execute(conduitTransfers);
     }
 
+    /// @dev This function transfers an ERC1155 token using a Seaport
+    ///      Conduit to source approval.
+    /// @notice Only use `msg.sender` or `address(this)` in the from param.
+    /// @param token        The ERC1155 token to transfer.
+    /// @param from         The originator of the transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param tokenId      The tokenId of the ERC1155 to be sent.
+    /// @param amount       The amount of the ERC1155 to be sent.
+    /// @param conduitKey   The key of the conduit to used.
     function _transferERC1155WithConduit(
         address token,
         address from,

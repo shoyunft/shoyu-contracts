@@ -10,6 +10,11 @@ contract SeaportAdapter {
         seaportAddress = _seaportAddress;
     }
 
+    /// @dev This function grants approval for NFTs held by address(this)
+    ///      to Seaport contract before executing a fulfillment function.
+    /// @param tokensToApprove      The tokens to approve before fulfilling the order(s).
+    /// @param ethAmount            The amount of ETH to be sent when filling the order(s).
+    /// @param data                 The Seaport encoded fulfillment data.
     function approveBeforeFulfill (
         address[] calldata tokensToApprove,
         uint256 ethAmount,
@@ -32,6 +37,10 @@ contract SeaportAdapter {
         }
     }
 
+    /// @dev This function calls a Seaport fulillment function using the given abi
+    ///      encoded function data.
+    /// @param ethAmount      The amount of ETH to be sent when calling the fulfillment function.
+    /// @param data           The Seaport encoded fulfillment function data.
     function fulfill (
         uint256 ethAmount,
         bytes calldata data

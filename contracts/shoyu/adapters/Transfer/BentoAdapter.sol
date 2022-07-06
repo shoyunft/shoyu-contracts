@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/// @dev Adapted from: https://github.com/sushiswap/sushiXswap/blob/44057bca0b0a4c43002787fdc9cc90b760cf3682/contracts/adapters/BentoAdapter.sol
 
 pragma solidity >=0.8.11;
 
@@ -16,7 +17,13 @@ abstract contract BentoAdapter {
         bentoBox = IBentoBoxMinimal(_bentoBox);
     }
 
-    // deposits funds from address(this) into bentobox
+    /// @dev Deposits ERC20 token from address(this) into the BentoBox.
+    /// @param approve flag to approve the token before depositing
+    /// @param token token to deposit. Use token as address(0) when depositing native token
+    /// @param to receiver
+    /// @param amount amount to be deposited
+    /// @param share share to be deposited
+    /// @param value native token value to be deposited. Only use when token address is address(0)
     function depositERC20ToBentoBox(
         bool approve,
         address token,

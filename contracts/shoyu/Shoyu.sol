@@ -21,6 +21,11 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         __Ownable_init();
     }
 
+    /// @dev This function executes a set of actions and allows composability
+    ///      (contract calls) to other contracts that exist in AdapterRegistry.
+    /// @param adapterIds   An array containing a sequence of adapterIds to execute.
+    /// @param values       The ETH amounts to be sent along with each adapter execution.
+    /// @param datas        The encoded function data to be used with each adapter execution.
     function cook(
         uint8[] calldata adapterIds,
         uint256[] calldata values,
@@ -64,6 +69,11 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         }
     }
 
+    /// @dev This function is used by the contract owner to grant
+    ///      ERC20 token approval to a specified operator.
+    /// @param token        The ERC20 token to approve.
+    /// @param operator     The operator to grant approval to.
+    /// @param amount       The operator's allowance.
     function approveERC20(
         address token,
         address operator,
@@ -72,14 +82,28 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         ERC20(token).approve(operator, amount);
     }
 
+    /// @dev This function is used by the contract owner to retrieve ETH
+    ///      that has been stuck in the contract.
+    /// @param to           The recipient of the retrieved asset.
+    /// @param amount       The amount of ETH to retrieve.
     function retrieveETH(address to, uint256 amount) onlyOwner external {
         _transferETH(to, amount);
     }
 
+    /// @dev This function is used by the contract owner to retrieve ERC20
+    ///      tokens that have become stuck in the contract.
+    /// @param token        The ERC20 token to retrieve.
+    /// @param to           The recipient of the retrieved asset.
+    /// @param amount       The amount of ERC20 to retrieve.
     function retrieveERC20(address token, address to, uint256 amount) onlyOwner external {
         ERC20(token).transfer(to, amount);
     }
 
+    /// @dev This function is used by the contract owner to retrieve ERC721
+    ///      assets that have become stuck in the contract.
+    /// @param token        The ERC721 token to retrieve.
+    /// @param tokenIds     The tokenIds to retrieve.
+    /// @param to           The recipient of the retrieved asset.
     function retrieveERC721(
         address token,
         uint256[] calldata tokenIds,
@@ -91,6 +115,12 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         }
     }
 
+    /// @dev This function is used by the contract owner to retrieve ERC1155
+    ///      assets that have become stuck in the contract.
+    /// @param token        The ERC721 token to retrieve.
+    /// @param tokenIds     The tokenIds to retrieve.
+    /// @param amounts      The amounts of each tokenIds to retrieve.
+    /// @param to           The recipient of the retrieved asset.
     function retrieveERC1155(
         address token,
         uint256[] calldata tokenIds,

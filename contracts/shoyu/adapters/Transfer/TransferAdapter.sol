@@ -17,7 +17,16 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
         BentoAdapter(_bentoBox)
     {}
 
-    // transfers ERC20 from msg.sender
+    /// @dev Function to transfer ERC20 tokens from `msg.sender`
+    ///      to a given recipient. Assets can be transferred from
+    ///      a user's bentobox or wallet. If funds are transferred
+    ///      from a user's wallet, approvals can be sourced from the
+    ///      Shoyu contract or Seaport Conduit.
+    /// @param token        The ERC20 token to transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param amount       The amount to transfer.
+    /// @param source       The token / approval source.
+    /// @param data         Additional encoded data required depending on `source`.
     function transferERC20From(
         address token,
         address to,
@@ -53,6 +62,15 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
         }
     }
 
+    /// @dev Function to transfer an ERC721 token from `msg.sender`
+    ///      to a given recipient. Assets will be transferred from
+    ///      a user's wallet with approvals being sourced from the
+    ///      Shoyu contract or Seaport Conduit.
+    /// @param token        The ERC721 token to transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param tokenId      The tokenId of the asset to transfer.
+    /// @param source       The NFT approval source.
+    /// @param data         Additional encoded data required depending on `source`.
     function transferERC721From(
         address token,
         address to,
@@ -81,6 +99,16 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
         }
     }
 
+    /// @dev Function to transfer an ERC1155 token from `msg.sender`
+    ///      to a given recipient. Assets will be transferred from
+    ///      a user's wallet with approvals being sourced from the
+    ///      Shoyu contract or Seaport Conduit.
+    /// @param token        The ERC1155 token to transfer.
+    /// @param to           The recipient of the transfer.
+    /// @param tokenId      The tokenId of the asset to transfer.
+    /// @param amount       The amount of the asset to transfer.
+    /// @param source       The NFT approval source.
+    /// @param data         Additional encoded data required depending on `source`.
     function transferERC1155From(
         address token,
         address to,

@@ -17,6 +17,10 @@ contract AdapterRegistry is Ownable {
         }
     }
 
+    /// @dev This function allows the contract owner to set an address
+    ///      for the specified adapter id.
+    /// @param id               The id of the adapter to change.
+    /// @param adapterAddress   The new adapter address.
     function setAdapterAddress(
         uint256 id,
         address adapterAddress
@@ -25,6 +29,10 @@ contract AdapterRegistry is Ownable {
         adapter.adapterAddress = adapterAddress; 
     }
 
+    /// @dev This function allows the contract owner to the update the
+    ///      status of a given adapter id.
+    /// @param id           The id of the adapter to update.
+    /// @param isActive     The new active flag of given adapter.
     function setAdapterStatus(
         uint256 id,
         bool isActive
@@ -33,6 +41,10 @@ contract AdapterRegistry is Ownable {
         adapter.isActive = isActive;
     }
 
+    /// @dev This function allows the contract owner to add a new
+    ///      adapter to the registry.
+    /// @param adapterAddress   The address of the new adapter.
+    /// @param isLibrary        Flag indicating whether the adapter is a library or not.
     function addAdapter(
         address adapterAddress,
         bool isLibrary
