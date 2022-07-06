@@ -17,7 +17,7 @@ abstract contract BentoAdapter {
     }
 
     // deposits funds from address(this) into bentobox
-    function depositToBentoBox(
+    function depositERC20ToBentoBox(
         bool approve,
         address token,
         address to,
@@ -63,7 +63,7 @@ abstract contract BentoAdapter {
     /// @param amount amount to transfer
     /// @param share share to transfer
     /// @param unwrapBento use true for withdraw and false for transfer
-    function _transferFromBentoBox(
+    function _transferERC20FromBentoBox(
         address token,
         address from,
         address to,

@@ -8,7 +8,6 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
-import "./interfaces/IShoyu.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
 
@@ -123,6 +122,25 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         bytes calldata
     ) public virtual returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
+    }
+
+    // @dev Allows this contract to receive ERC721 tokens
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external virtual returns (bytes4) {
+        return 0x150b7a02;
+    }
+
+    // @dev Used by ERC721BasicToken.sol
+    function onERC721Received(
+        address,
+        uint256,
+        bytes calldata
+    ) external virtual returns (bytes4) {
+        return 0xf0b9e5ba;
     }
 
     /// @dev Required by UUPSUpgradeable

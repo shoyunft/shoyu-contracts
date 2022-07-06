@@ -25,7 +25,6 @@
     "readline-sync": "^1.4.10"
   },
   "devDependencies": {
-    "seaport": "git+https://github.com/ProjectOpenSea/seaport.git#5c6a628cb152d731e956682dd748d30e8bf1f1c9",
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@rari-capital/solmate": "^6.2.0",
@@ -53,8 +52,9 @@
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "scuffed-abi": "^1.0.4",
+    "seaport": "git+https://github.com/ProjectOpenSea/seaport.git#5c6a628cb152d731e956682dd748d30e8bf1f1c9",
     "solhint": "^3.3.6",
-    "solidity-coverage": "^0.7.0",
+    "solidity-coverage": "^0.7.21",
     "ts-node": "^10.4.0",
     "typechain": "^8.0.0",
     "typescript": "^4.5.4"

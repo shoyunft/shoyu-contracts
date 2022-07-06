@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
 
-import "seaport/contracts/lib/TokenTransferrer.sol";
+import "@rari-capital/solmate/src/tokens/ERC20.sol";
+import "@rari-capital/solmate/src/tokens/ERC721.sol";
+import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./ConduitAdapter.sol";
 import "./BentoAdapter.sol";
 import { TokenSource } from "../../lib/ShoyuEnums.sol";
 
-// TODO: Consider notice in TokenTransferrer.sol, maybe it shouldn't be used here
-contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
+contract TransferAdapter is ConduitAdapter, BentoAdapter {
     constructor(
         address _conduitController,
         address _bentoBox
@@ -16,6 +17,7 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         BentoAdapter(_bentoBox)
     {}
 
+    // transfers ERC20 from msg.sender
     function transferERC20From(
         address token,
         address to,
@@ -24,16 +26,11 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         bytes memory data
     ) public {
         if (source == TokenSource.WALLET) {
-            _performERC20Transfer(
-                token,
-                msg.sender,
-                to,
-                amount
-            );
+            ERC20(token).transferFrom(msg.sender, to, amount);
         } else if (source == TokenSource.CONDUIT) {
             bytes32 conduitKey = abi.decode(data, (bytes32));
 
-            _performERC20TransferWithConduit(
+            _transferERC20WithConduit(
                 token,
                 msg.sender,
                 to,
@@ -43,7 +40,7 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         } else if (source == TokenSource.BENTO) {
             bool unwrapBento = abi.decode(data, (bool));
 
-            _transferFromBentoBox(
+            _transferERC20FromBentoBox(
                 token,
                 msg.sender,
                 to,
@@ -64,8 +61,7 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         bytes memory data
     ) public {
         if (source == TokenSource.WALLET) {
-            _performERC721Transfer(
-                token,
+            ERC721(token).safeTransferFrom(
                 msg.sender,
                 to,
                 tokenId
@@ -73,7 +69,7 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         } else if (source == TokenSource.CONDUIT) {
             bytes32 conduitKey = abi.decode(data, (bytes32));
 
-            _performERC721TransferWithConduit(
+            _transferERC721WithConduit(
                 token,
                 msg.sender,
                 to,
@@ -94,17 +90,17 @@ contract TransferAdapter is TokenTransferrer, ConduitAdapter, BentoAdapter {
         bytes memory data
     ) public {
         if (source == TokenSource.WALLET) {
-            _performERC1155Transfer(
-                token,
+            ERC1155(token).safeTransferFrom(
                 msg.sender,
                 to,
                 tokenId,
-                amount
+                amount,
+                "0x"
             );
         } else if (source == TokenSource.CONDUIT) {
            bytes32 conduitKey = abi.decode(data, (bytes32));
 
-           _performERC1155TransferWithConduit(
+           _transferERC1155WithConduit(
                 token,
                 msg.sender,
                 to,

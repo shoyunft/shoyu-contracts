@@ -2,10 +2,9 @@
 pragma solidity >=0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IAdapterRegistry.sol";
 import { Adapter } from "./ShoyuStructs.sol";
 
-contract AdapterRegistry is IAdapterRegistry, Ownable {
+contract AdapterRegistry is Ownable {
     Adapter[] public adapters;
 
     constructor(

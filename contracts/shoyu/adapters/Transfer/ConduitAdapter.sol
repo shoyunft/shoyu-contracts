@@ -24,16 +24,9 @@ contract ConduitAdapter {
         _CONDUIT_CONTROLLER = conduitController;
     }
 
-    function _performERC20TransferWithConduit(
-        address token,
-        address from,
-        address to,
-        uint256 amount,
-        bytes32 conduitKey
-    ) internal {
-        // Derive the conduit address from the deployer, conduit key
-        // and creation code hash.
-        address conduit = address(
+    // Derive the conduit address from the deployer, conduit key and creation code hash.
+    function _getConduit(bytes32 conduitKey) internal view returns (address conduit) {
+        conduit = address(
             uint160(
                 uint256(
                     keccak256(
@@ -47,6 +40,16 @@ contract ConduitAdapter {
                 )
             )
         );
+    }
+
+    function _transferERC20WithConduit(
+        address token,
+        address from,
+        address to,
+        uint256 amount,
+        bytes32 conduitKey
+    ) internal {
+        address conduit = _getConduit(conduitKey);
 
         ConduitTransfer[] memory conduitTransfers = new ConduitTransfer[](1);
         conduitTransfers[0] = ConduitTransfer(
@@ -62,29 +65,14 @@ contract ConduitAdapter {
         ConduitInterface(conduit).execute(conduitTransfers);
     }
 
-    function _performERC721TransferWithConduit(
+    function _transferERC721WithConduit(
         address token,
         address from,
         address to,
         uint256 tokenId,
         bytes32 conduitKey
     ) internal {
-        // Derive the conduit address from the deployer, conduit key
-        // and creation code hash.
-        address conduit = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            bytes1(0xff),
-                            address(_CONDUIT_CONTROLLER),
-                            conduitKey,
-                            _CONDUIT_CREATION_CODE_HASH
-                        )
-                    )
-                )
-            )
-        );
+        address conduit = _getConduit(conduitKey);
 
         ConduitTransfer[] memory conduitTransfers = new ConduitTransfer[](1);
         conduitTransfers[0] = ConduitTransfer(
@@ -100,7 +88,7 @@ contract ConduitAdapter {
         ConduitInterface(conduit).execute(conduitTransfers);
     }
 
-    function _performERC1155TransferWithConduit(
+    function _transferERC1155WithConduit(
         address token,
         address from,
         address to,
@@ -108,22 +96,7 @@ contract ConduitAdapter {
         uint256 amount,
         bytes32 conduitKey
     ) internal {
-        // Derive the conduit address from the deployer, conduit key
-        // and creation code hash.
-        address conduit = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            bytes1(0xff),
-                            address(_CONDUIT_CONTROLLER),
-                            conduitKey,
-                            _CONDUIT_CREATION_CODE_HASH
-                        )
-                    )
-                )
-            )
-        );
+        address conduit = _getConduit(conduitKey);
 
         ConduitTransfer[] memory conduitTransfers = new ConduitTransfer[](1);
         conduitTransfers[0] = ConduitTransfer(

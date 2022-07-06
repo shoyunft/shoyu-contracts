@@ -2,8 +2,6 @@
 pragma solidity >=0.8.7;
 
 import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
-import "@rari-capital/solmate/src/tokens/ERC20.sol";
-
 import "../Transfer/ConduitAdapter.sol";
 import "../Transfer/TransferAdapter.sol";
 import { SwapExactOutDetails } from "../../lib/ShoyuStructs.sol";

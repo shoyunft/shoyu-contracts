@@ -11,7 +11,7 @@ import {
 
 import IUNISWAPV2_ABI from "@sushiswap/core/build/abi/IUniswapV2Pair.json";
 
-import { seedSushiswapPools } from "./utils/fixtures/seedSushiswapPools";
+import { seedSushiswapPools } from "./utils/fixtures/sushi";
 import { faucet } from "./utils/impersonate";
 import { seaportFixture } from "./utils/fixtures";
 import {
@@ -23,12 +23,8 @@ import {
   toKey,
 } from "./utils/encoding";
 import { deployContract } from "./utils/contracts";
-import { shoyuFixture } from "./utils/fixtures/shoyuFixture";
-import {
-  ACTION_LEGACY_SWAP_EXACT_OUT,
-  ACTION_SEAPORT_FULFILLMENT,
-  TokenSource,
-} from "./utils/contsants";
+import { shoyuFixture } from "./utils/fixtures/shoyu";
+import { TokenSource } from "./utils/contsants";
 import { signBentoMasterContractApproval } from "./utils/helpers";
 
 describe(`Shoyu exchange test suite`, function () {
@@ -2154,7 +2150,7 @@ describe(`Shoyu exchange test suite`, function () {
                 ]
               ),
               transformationAdapter.interface.encodeFunctionData(
-                "depositToBentoBox",
+                "depositERC20ToBentoBox",
                 [
                   true,
                   testERC20.address, // token
@@ -2284,7 +2280,7 @@ describe(`Shoyu exchange test suite`, function () {
                 ]
               ),
               transformationAdapter.interface.encodeFunctionData(
-                "depositToBentoBox",
+                "depositERC20ToBentoBox",
                 [
                   true,
                   testERC20.address, // token

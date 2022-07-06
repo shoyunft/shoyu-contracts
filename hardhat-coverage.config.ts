@@ -1,10 +1,12 @@
 import * as dotenv from "dotenv";
 
-import { HardhatUserConfig, task } from "hardhat/config";
+import type { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-deploy";
+import "@openzeppelin/hardhat-upgrades";
 
 dotenv.config();
 
@@ -23,12 +25,35 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      {
+        version: "0.6.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
     ],
   },
   networks: {
     hardhat: {
       blockGasLimit: 30_000_000,
       throwOnCallFailures: false,
+    },
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+    alice: {
+      default: 1,
+    },
+    bob: {
+      default: 2,
+    },
+    carol: {
+      default: 3,
     },
   },
   gasReporter: {
