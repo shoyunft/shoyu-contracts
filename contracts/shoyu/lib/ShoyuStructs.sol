@@ -20,6 +20,5 @@ struct SwapExactInDetails {
 
 struct Adapter {
     address adapterAddress;
-    bool isLibrary;
     bool isActive;
 }

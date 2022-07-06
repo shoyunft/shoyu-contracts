@@ -84,9 +84,14 @@ const deployFunction: DeployFunction = async function ({
     log: true,
   });
 
+  const seaportAdapter = await deploy("SeaportAdapter", {
+    from: deployer,
+    args: [seaport.address],
+  });
+
   const adapterRegistry = await deploy("AdapterRegistry", {
     from: deployer,
-    args: [2, [transformationAdapter.address, seaport.address], [true, false]],
+    args: [2, [transformationAdapter.address, seaportAdapter.address]],
     log: true,
   });
 

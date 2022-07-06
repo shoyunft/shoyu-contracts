@@ -23,26 +23,22 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
 
     /// @dev This function executes a set of actions and allows composability
     ///      (contract calls) to other contracts that exist in AdapterRegistry.
-    /// @param adapterIds   An array containing a sequence of adapterIds to execute.
-    /// @param values       The ETH amounts to be sent along with each adapter execution.
-    /// @param datas        The encoded function data to be used with each adapter execution.
+    /// @param adapterIds   An array containing a sequence of ids of adapters to executed.
+    /// @param datas        The encoded function data to be used when calling each adapter.
     function cook(
         uint8[] calldata adapterIds,
-        uint256[] calldata values,
         bytes[] calldata datas
     ) external payable whenNotPaused {
         uint256 length = adapterIds.length;
         for (uint256 i; i < length; ++i) {
             (
                 address adapterAddress,
-                bool isLibrary,
                 bool isActive
             ) = adapterRegistry.adapters(adapterIds[i]);
 
             require(isActive, "cook: inactive adapter");
 
-            (bool success, ) = isLibrary ? adapterAddress.delegatecall(datas[i])
-                : adapterAddress.call{value: values[i]}(datas[i]);
+            (bool success, ) = adapterAddress.delegatecall(datas[i]);
 
             if (!success) {
                 assembly {

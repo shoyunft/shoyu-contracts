@@ -31,6 +31,8 @@ const deployFunction: DeployFunction = async function ({
     throw Error("No CONDUITCONTROLLER!");
   }
 
+  const shoyu = await ethers.getContract("Shoyu");
+
   const conduitKey = `${deployer}${
     NONCE.length < 24 ? String(NONCE).padStart(24, "0") : NONCE.slice(0, 24)
   }`;
@@ -43,7 +45,12 @@ const deployFunction: DeployFunction = async function ({
   } else {
     const { gasLimit } = await ethers.provider.getBlock("latest");
 
-    await conduitController.createConduit(conduitKey, deployer, { gasLimit });
+    const tx = await conduitController.createConduit(conduitKey, deployer, {
+      gasLimit,
+    });
+    await tx.wait();
+
+    await conduitController.updateChannel(conduitAddress, shoyu.address, true);
 
     console.log("Conduit deployed at address", conduitAddress);
   }
@@ -59,3 +66,5 @@ const deployFunction: DeployFunction = async function ({
 export default deployFunction;
 
 deployFunction.tags = ["DeployConduit"];
+
+deployFunction.dependencies = ["DeployShoyu"];

@@ -9,11 +9,10 @@ contract AdapterRegistry is Ownable {
 
     constructor(
         uint256 length,
-        address[] memory adapterAddress,
-        bool[] memory isLibrary
+        address[] memory adapterAddress
     ) {
         for (uint256 i; i < length; ++i) {
-            adapters.push(Adapter(adapterAddress[i], isLibrary[i], true));
+            adapters.push(Adapter(adapterAddress[i], true));
         }
     }
 
@@ -44,11 +43,9 @@ contract AdapterRegistry is Ownable {
     /// @dev This function allows the contract owner to add a new
     ///      adapter to the registry.
     /// @param adapterAddress   The address of the new adapter.
-    /// @param isLibrary        Flag indicating whether the adapter is a library or not.
     function addAdapter(
-        address adapterAddress,
-        bool isLibrary
+        address adapterAddress
     ) external onlyOwner {
-        adapters.push(Adapter(adapterAddress, isLibrary, true));
+        adapters.push(Adapter(adapterAddress, true));
     }
 }

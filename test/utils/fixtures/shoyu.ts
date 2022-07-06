@@ -39,8 +39,7 @@ export const shoyuFixture = async (
     "AdapterRegistry",
     owner as any,
     2,
-    [transformationAdapter.address, seaportAdapter.address],
-    [true, true]
+    [transformationAdapter.address, seaportAdapter.address]
   );
 
   const shoyuFactory = await ethers.getContractFactory("Shoyu");
@@ -74,5 +73,6 @@ export const shoyuFixture = async (
     transformationAdapter,
     seaportAdapter,
     bentobox,
+    adapterRegistry,
   };
 };
