@@ -322,8 +322,6 @@ describe("[SEAPORT] Tests", function () {
         0 // FULL_OPEN
       );
 
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
       await withBalanceChecks([order], 0, null, async () => {
         const tx = marketplaceContract
           .connect(seller)

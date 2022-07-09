@@ -17,6 +17,10 @@ import {
 } from "./utils/encoding";
 import { shoyuFixture } from "./utils/fixtures/shoyu";
 import { TokenSource } from "./utils/contsants";
+import {
+  encodeFulfillAdvancedOrderParams,
+  encodeFulfillAvailableAdvancedOrdersParams,
+} from "./utils/helpers";
 
 describe("[TRANFORMATION] Tests", function () {
   const provider = ethers.provider;
@@ -146,9 +150,11 @@ describe("[TRANFORMATION] Tests", function () {
             ]),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ]
@@ -216,9 +222,11 @@ describe("[TRANFORMATION] Tests", function () {
             ),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ]
@@ -281,10 +289,12 @@ describe("[TRANFORMATION] Tests", function () {
               ]
             ),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
-              toKey(false),
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              0,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ],
@@ -364,9 +374,11 @@ describe("[TRANFORMATION] Tests", function () {
             ]),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ]
@@ -425,9 +437,11 @@ describe("[TRANFORMATION] Tests", function () {
             ]),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ],
@@ -530,20 +544,18 @@ describe("[TRANFORMATION] Tests", function () {
               "0x", // transferData
               true, // unwrapNativeToken
             ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
+            seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
               totalValue,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0, order1],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
+              encodeFulfillAvailableAdvancedOrdersParams(
+                [order0, order1],
+                [],
+                offerComponents,
+                considerationComponents,
+                toKey(false),
+                buyer.address,
+                2
               ),
+              true,
             ]),
           ]
         );
@@ -650,20 +662,18 @@ describe("[TRANFORMATION] Tests", function () {
               "0x", // transferData
               true, // unwrapNativeToken
             ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
+            seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
               totalValue,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0, order1],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
+              encodeFulfillAvailableAdvancedOrdersParams(
+                [order0, order1],
+                [],
+                offerComponents,
+                considerationComponents,
+                toKey(false),
+                buyer.address,
+                2
               ),
+              true,
             ]),
           ],
           {
@@ -734,9 +744,11 @@ describe("[TRANFORMATION] Tests", function () {
             ]),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ]
@@ -756,130 +768,6 @@ describe("[TRANFORMATION] Tests", function () {
           {
             order,
             orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("Excess ETH is refunded if one or more orders cannot be filled when batch filling", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const { amount, nftId } = await mintAndApprove1155(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem1155(nftId, amount.div(2), amount.div(2))];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const order0 = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      const order1 = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0, // FULL_OPEN
-        [],
-        "EXPIRED"
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      const buyerETHBalanceBefore = await provider.getBalance(buyer.address);
-      const offerComponents = [[[0, 0]], [[1, 0]]].map(toFulfillmentComponents);
-
-      const considerationComponents = [
-        [
-          [0, 0],
-          [1, 0],
-        ],
-        [
-          [0, 1],
-          [1, 1],
-        ],
-      ].map(toFulfillmentComponents);
-
-      const totalValue = order0.value.add(order1.value);
-
-      await withBalanceChecks([order0.order], 0, null, async () => {
-        const tx = await shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              totalValue, // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              totalValue,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAvailableAdvancedOrders",
-                [
-                  [order0.order, order1.order],
-                  [],
-                  offerComponents,
-                  considerationComponents,
-                  toKey(false),
-                  buyer.address,
-                  2,
-                ]
-              ),
-            ]),
-          ]
-        );
-
-        const receipt = await (await tx).wait();
-
-        const lpInterface = new Interface(IUNISWAPV2_ABI);
-
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
-            }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
-
-        const buyerETHBalanceAfter = await provider.getBalance(buyer.address);
-
-        expect(
-          buyerETHBalanceAfter.sub(buyerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice
-            .mul(receipt.gasUsed)
-            .sub(swapEvent.amount0Out)
-            .add(order1.value)
-            .abs()
-            .toString()
-        );
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order: order0.order,
-            orderHash: order0.orderHash,
             fulfiller: buyer.address,
           },
         ]);
@@ -935,9 +823,11 @@ describe("[TRANFORMATION] Tests", function () {
               [
                 [testERC721.address],
                 0,
-                marketplaceContract.interface.encodeFunctionData(
-                  "fulfillAdvancedOrder",
-                  [order, [], toKey(false), shoyuContract.address]
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  shoyuContract.address
                 ),
               ]
             ),
@@ -1055,9 +945,11 @@ describe("[TRANFORMATION] Tests", function () {
               [
                 [testERC1155.address],
                 0,
-                marketplaceContract.interface.encodeFunctionData(
-                  "fulfillAdvancedOrder",
-                  [order, [], toKey(false), shoyuContract.address]
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  shoyuContract.address
                 ),
               ]
             ),
@@ -1183,9 +1075,11 @@ describe("[TRANFORMATION] Tests", function () {
               [
                 [testERC721.address],
                 0,
-                marketplaceContract.interface.encodeFunctionData(
-                  "fulfillAdvancedOrder",
-                  [order, [], toKey(false), shoyuContract.address]
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  shoyuContract.address
                 ),
               ]
             ),
@@ -1280,9 +1174,11 @@ describe("[TRANFORMATION] Tests", function () {
             ]),
             seaportAdapter.interface.encodeFunctionData("fulfill", [
               value,
-              marketplaceContract.interface.encodeFunctionData(
-                "fulfillAdvancedOrder",
-                [order, [], toKey(false), buyer.address]
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
               ),
             ]),
           ]

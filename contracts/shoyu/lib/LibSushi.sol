@@ -41,17 +41,6 @@ function getReserves(
     (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
 }
 
-// given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-function quote(
-    uint amountA,
-    uint reserveA,
-    uint reserveB
-) pure returns (uint amountB) {
-    require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
-    require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-    amountB = amountA * reserveB / reserveA;
-}
-
 // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
 function getAmountOut(
     uint amountIn,
