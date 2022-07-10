@@ -7,15 +7,11 @@ import "seaport/contracts/interfaces/ConsiderationInterface.sol";
 contract SeaportAdapter {
     address public immutable seaportAddress;
 
-    bytes4 private immutable fulfillAdvancedOrderSelector;
-    bytes4 private immutable fulfillAvailableAdvancedOrdersSelector;
+    bytes4 private constant fulfillAdvancedOrderSelector = 0xe7acab24;
+    bytes4 private constant fulfillAvailableAdvancedOrdersSelector = 0x87201b41;
 
     constructor(address _seaportAddress) {
         seaportAddress = _seaportAddress;
-        fulfillAdvancedOrderSelector = ConsiderationInterface(seaportAddress)
-            .fulfillAdvancedOrder.selector;
-        fulfillAvailableAdvancedOrdersSelector = ConsiderationInterface(seaportAddress)
-            .fulfillAvailableAdvancedOrders.selector;
     }
 
     /// @dev This function grants approval for NFTs held by address(this)
