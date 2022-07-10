@@ -1,4 +1,4 @@
-# Shoyu
+# Shoyu [![Coverage Status](https://coveralls.io/repos/github/shoyunft/shoyu-contracts/badge.svg)](https://coveralls.io/github/shoyunft/shoyu-contracts)
 
 Shoyu
 
