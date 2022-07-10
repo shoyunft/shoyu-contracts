@@ -102,24 +102,7 @@ describe("[TRANFORMATION] Tests", function () {
     ));
   });
 
-  describe("Tests various transformations before filling seaport orders", async () => {
-    beforeEach(async () => {
-      await seedSushiswapPools({
-        pairs: [
-          {
-            token0: testWETH,
-            token0Amount: parseEther("50"),
-            token1: testERC20,
-            token1Amount: parseEther("25"),
-          },
-        ],
-      });
-
-      await Promise.all(
-        [seller, buyer].map((wallet) => faucet(wallet.address, provider))
-      );
-    });
-
+  describe("[REVERTS]", async () => {
     it("Transferring ERC20 reverts with invalid TokenSource", async () => {
       // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
       const nftId = await mintAndApprove721(
@@ -294,6 +277,25 @@ describe("[TRANFORMATION] Tests", function () {
             ]
           )
       ).to.be.reverted;
+    });
+  });
+
+  describe("[SEAPORT + TRANSFORM]", async () => {
+    beforeEach(async () => {
+      await seedSushiswapPools({
+        pairs: [
+          {
+            token0: testWETH,
+            token0Amount: parseEther("50"),
+            token1: testERC20,
+            token1Amount: parseEther("25"),
+          },
+        ],
+      });
+
+      await Promise.all(
+        [seller, buyer].map((wallet) => faucet(wallet.address, provider))
+      );
     });
 
     it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH", async () => {

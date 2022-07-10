@@ -228,7 +228,7 @@ describe("[SHOYU] Tests", function () {
   });
 
   describe("Tests `cook()` function", async () => {
-    describe("[REVERT]", async () => {
+    describe("[REVERTS]", async () => {
       it("Reverts if an inactive adapter is called", async () => {
         await expect(
           shoyuContract.cook(

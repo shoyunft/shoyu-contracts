@@ -88,7 +88,7 @@ describe("[BENTOBOX] Tests", function () {
     ));
   });
 
-  describe("Tests bentobox integration", async () => {
+  describe("[SEAPORT + BENTOBOX]", async () => {
     beforeEach(async () => {
       await seedSushiswapPools({
         pairs: [

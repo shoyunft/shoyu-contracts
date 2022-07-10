@@ -81,7 +81,7 @@ describe("[CONDUIT] Tests", function () {
       .updateChannel(conduitOne.address, shoyuContract.address, true);
   });
 
-  describe("Tests Seaport Conduit integrations", async () => {
+  describe("[SEAPORT + CONDUIT]", async () => {
     beforeEach(async () => {
       await seedSushiswapPools({
         pairs: [

@@ -189,7 +189,7 @@ describe("[SEAPORT] Adapter Tests", function () {
       });
     });
 
-    it("approveBeforeFulfillBatch reverts if one or more orders cannot be filled and `revertIfIncomplete` is true", async () => {
+    it("fulfillBatch reverts if one or more orders cannot be filled and `revertIfIncomplete` is true", async () => {
       // buyer creates 2 offers for ERC1155, each at a total price of 1ETH + .1ETH fee
       const { amount, nftId } = await mintAndApprove1155(
         seller,
@@ -298,6 +298,116 @@ describe("[SEAPORT] Adapter Tests", function () {
               ),
             ]
           )
+      ).to.be.reverted;
+    });
+
+    it("fulfillBatch reverts if seaport call fails", async () => {
+      // buyer creates 2 offers for ERC1155, each at a total price of 1ETH + .1ETH fee
+      const { amount, nftId } = await mintAndApprove1155(
+        seller,
+        shoyuContract.address,
+        1,
+        undefined,
+        500
+      );
+
+      await mintAndApproveERC20(
+        buyer,
+        marketplaceContract.address,
+        parseEther("5")
+      );
+
+      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+      const consideration = [
+        getTestItem1155(
+          nftId,
+          amount.div(2),
+          amount.div(2),
+          undefined,
+          buyer.address
+        ),
+        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+      ];
+
+      const order0 = await createOrder(
+        buyer,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      const order1 = await createOrder(
+        buyer,
+        zone,
+        offer,
+        consideration,
+        0, // FULL_OPEN
+        [],
+        "EXPIRED"
+      );
+
+      consideration.push(
+        getTestItem20(parseEther("1"), parseEther("1"), seller.address)
+      );
+
+      const offerComponents = [
+        [
+          [0, 0],
+          [1, 0],
+        ],
+      ].map(toFulfillmentComponents);
+
+      const considerationComponents = [
+        [
+          [0, 0],
+          [1, 0],
+        ],
+        [
+          [0, 1],
+          [1, 1],
+        ],
+        [
+          [0, 2],
+          [1, 2],
+        ],
+      ].map(toFulfillmentComponents);
+
+      await expect(
+        shoyuContract.connect(seller).cook(
+          [0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC1155From",
+              [
+                testERC1155.address,
+                shoyuContract.address,
+                nftId,
+                amount,
+                TokenSource.WALLET,
+                "0x",
+              ]
+            ),
+            seaportAdapter.interface.encodeFunctionData(
+              "approveBeforeFulfillBatch",
+              [
+                [testERC1155.address, testERC1155.address],
+                0,
+                encodeFulfillAvailableAdvancedOrdersParams(
+                  [order0.order, order1.order],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(true), // <- invalid key sent
+                  shoyuContract.address,
+                  2
+                ),
+                true,
+              ]
+            ),
+          ]
+        )
       ).to.be.reverted;
     });
   });
