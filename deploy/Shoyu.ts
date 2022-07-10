@@ -7,6 +7,7 @@ import {
 import { upgrades } from "hardhat";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { MaxUint256 } from "@ethersproject/constants";
 import {
   CONDUIT_CONTROLLER_ADDRESS,
   SEAPORT_ADDRESS,
@@ -119,6 +120,12 @@ const deployFunction: DeployFunction = async function ({
 
     const artifact = await deployments.getExtendedArtifact("Shoyu");
     await save("Shoyu", { address: shoyu.address, ...artifact });
+
+    const shoyuContract = await ethers.getContract("Shoyu");
+
+    await shoyuContract.approveERC20(wethAddress, seaport.address, MaxUint256);
+
+    await shoyuContract.approveERC20(wethAddress, bentobox.address, MaxUint256);
 
     console.log("Shoyu deployed at address", shoyu.address);
   }

@@ -18,25 +18,19 @@ abstract contract BentoAdapter {
     }
 
     /// @dev Deposits ERC20 token from address(this) into the BentoBox.
-    /// @param approve flag to approve the token before depositing
     /// @param token token to deposit. Use token as address(0) when depositing native token
     /// @param to receiver
     /// @param amount amount to be deposited
     /// @param share share to be deposited
     /// @param value native token value to be deposited. Only use when token address is address(0)
     function depositERC20ToBentoBox(
-        bool approve,
         address token,
         address to,
         uint256 amount,
         uint256 share,
         uint256 value
     ) public {
-        if (approve) {
-            ERC20(token).approve(address(bentoBox), type(uint256).max);
-        }
-
-        bentoBox.deposit{value: value}(token, address(this), to, amount, share);
+        _depositToBentoBox(token, address(this), to, amount, share, value);
     }
 
     /// @notice Deposits the token from users wallet into the BentoBox.

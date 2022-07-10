@@ -328,7 +328,6 @@ describe("[SHOYU] Tests", function () {
               transformationAdapter.interface.encodeFunctionData(
                 "depositERC20ToBentoBox",
                 [
-                  true,
                   testERC20.address, // token
                   seller.address, // to
                   parseEther("1"), // amount

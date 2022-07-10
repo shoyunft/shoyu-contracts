@@ -4,6 +4,7 @@ import "@sushiswap/core/contracts/uniswapv2/interfaces/IWETH.sol";
 import "./LegacySwapAdapter.sol";
 
 contract TransformationAdapter is LegacySwapAdapter {
+    /// @dev The WETH address.
     address private immutable WETH;
 
     constructor(
@@ -12,7 +13,12 @@ contract TransformationAdapter is LegacySwapAdapter {
         bytes32 _pairCodeHash,
         address _conduitController,
         address _bentobox
-    ) LegacySwapAdapter(_factory, _pairCodeHash, _conduitController, _bentobox) {
+    ) LegacySwapAdapter(
+        _factory,
+        _pairCodeHash,
+        _conduitController,
+        _bentobox
+    ) {
         WETH = _weth;
     }
 
@@ -47,7 +53,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
-                _transferEth(to, amountOut);
+                _transferETH(to, amountOut);
             }
         }
     }
@@ -77,7 +83,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
-                _transferEth(to, amountOut);
+                _transferETH(to, amountOut);
             }
         }
 
@@ -93,7 +99,7 @@ contract TransformationAdapter is LegacySwapAdapter {
     ) public payable {
         IWETH(WETH).withdraw(amount);
         if (to != address(this)) {
-            _transferEth(to, amount);
+            _transferETH(to, amount);
         }
     }
 

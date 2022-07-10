@@ -1,6 +1,6 @@
 import { Contract, Wallet } from "ethers";
 import { ethers, network } from "hardhat";
-import { AddressZero } from "@ethersproject/constants";
+import { AddressZero, MaxUint256 } from "@ethersproject/constants";
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 
@@ -262,7 +262,6 @@ describe("[BENTOBOX] Tests", function () {
             transformationAdapter.interface.encodeFunctionData(
               "depositERC20ToBentoBox",
               [
-                true,
                 testERC20.address, // token
                 seller.address, // to
                 parseEther("1"), // amount
@@ -302,6 +301,141 @@ describe("[BENTOBOX] Tests", function () {
 
         const sellerBentoBalance = await bentobox.balanceOf(
           testERC20.address,
+          seller.address
+        );
+
+        expect(sellerBentoBalance.toString()).to.eq(parseEther("1").toString());
+
+        await checkExpectedEvents(
+          tx,
+          receipt,
+          [
+            {
+              order,
+              orderHash,
+              fulfiller: shoyuContract.address,
+            },
+          ],
+          [
+            {
+              item: consideration[0],
+              offerer: shoyuContract.address,
+              conduitKey: toKey(false),
+            },
+          ]
+        );
+
+        return receipt;
+      });
+    });
+
+    it("User accepts offer on ERC721 for WETH and deposits in bentobox", async () => {
+      const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+      await testWETH.connect(buyer).deposit({ value: parseEther("2") });
+      await testWETH
+        .connect(buyer)
+        .approve(marketplaceContract.address, MaxUint256);
+
+      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+      const offer = [
+        getTestItem20(
+          parseEther("1.1"),
+          parseEther("1.1"),
+          undefined,
+          testWETH.address
+        ),
+      ];
+
+      const consideration = [
+        getTestItem721(nftId, 1, 1, buyer.address),
+        getTestItem20(
+          parseEther(".1"),
+          parseEther(".1"),
+          zone.address,
+          testWETH.address
+        ),
+      ];
+
+      const { order, orderHash } = await createOrder(
+        buyer,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      // buyer fills order through Shoyu contract
+      // and deposits received ERC20 in bentobox
+      await withBalanceChecks([order], 0, null, async () => {
+        const tx = shoyuContract.connect(seller).cook(
+          [0, 1, 0],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC721From",
+              [
+                testERC721.address,
+                shoyuContract.address,
+                nftId,
+                TokenSource.WALLET,
+                "0x",
+              ]
+            ),
+            seaportAdapter.interface.encodeFunctionData(
+              "approveBeforeFulfill",
+              [
+                [testERC721.address],
+                0,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  shoyuContract.address
+                ),
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData(
+              "depositERC20ToBentoBox",
+              [
+                testWETH.address, // token
+                seller.address, // to
+                parseEther("1"), // amount
+                0, // share
+                0, // value
+              ]
+            ),
+          ]
+        );
+
+        const receipt = await (await tx).wait();
+
+        const bentoDepositEvent = receipt.events
+          .filter((event: any) => {
+            try {
+              bentobox.interface.decodeEventLog(
+                "LogDeposit",
+                event.data,
+                event.topics
+              );
+              return true;
+            } catch (e) {
+              return false;
+            }
+          })
+          .map((event: any) =>
+            bentobox.interface.decodeEventLog(
+              "LogDeposit",
+              event.data,
+              event.topics
+            )
+          )[0];
+
+        expect(bentoDepositEvent.amount.toString()).to.eq(
+          parseEther("1").toString()
+        );
+
+        const sellerBentoBalance = await bentobox.balanceOf(
+          testWETH.address,
           seller.address
         );
 

@@ -15,6 +15,8 @@ export const shoyuFixture = async (
 
   const sushiswapFactory = await ethers.getContract("UniswapV2Factory");
 
+  const sushiswapRouter = await ethers.getContract("UniswapV2Router02");
+
   const bentobox = await ethers.getContract("BentoBoxV1");
 
   const pairCodeHash = await sushiswapFactory.pairCodeHash();
@@ -67,6 +69,18 @@ export const shoyuFixture = async (
     MaxUint256
   );
 
+  await shoyuContract.approveERC20(
+    testWETH.address,
+    bentobox.address,
+    MaxUint256
+  );
+
+  await shoyuContract.approveERC20(
+    testERC20.address,
+    bentobox.address,
+    MaxUint256
+  );
+
   return {
     shoyuContract,
     testWETH,
@@ -74,5 +88,7 @@ export const shoyuFixture = async (
     seaportAdapter,
     bentobox,
     adapterRegistry,
+    sushiswapRouter,
+    sushiswapFactory,
   };
 };
