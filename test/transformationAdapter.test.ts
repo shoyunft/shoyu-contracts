@@ -46,8 +46,6 @@ describe("[TRANFORMATION] Tests", function () {
   let checkExpectedEvents: any;
   let seller: Wallet;
   let buyer: Wallet;
-  let sushiswapRouter: Contract;
-  let sushiswapFactory: Contract;
   let lpInterface: Interface;
 
   after(async () => {
@@ -87,19 +85,13 @@ describe("[TRANFORMATION] Tests", function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    ({
-      shoyuContract,
-      testWETH,
-      transformationAdapter,
-      seaportAdapter,
-      sushiswapRouter,
-      sushiswapFactory,
-    } = await shoyuFixture(
-      owner,
-      marketplaceContract,
-      conduitController,
-      testERC20
-    ));
+    ({ shoyuContract, testWETH, transformationAdapter, seaportAdapter } =
+      await shoyuFixture(
+        owner,
+        marketplaceContract,
+        conduitController,
+        testERC20
+      ));
   });
 
   describe("[REVERTS]", async () => {
@@ -1121,6 +1113,10 @@ describe("[TRANFORMATION] Tests", function () {
             lpInterface.decodeEventLog("Swap", event.data, event.topics)
           )[0];
 
+        const ethOut = swapEvent.amount0Out.eq(0)
+          ? swapEvent.amount1Out
+          : swapEvent.amount0Out;
+
         const sellerETHBalanceAfter = await provider.getBalance(seller.address);
 
         expect(
@@ -1128,7 +1124,7 @@ describe("[TRANFORMATION] Tests", function () {
         ).to.eq(
           receipt.effectiveGasPrice
             .mul(receipt.gasUsed)
-            .sub(swapEvent.amount1Out)
+            .sub(ethOut)
             .abs()
             .toString()
         );
@@ -1237,11 +1233,15 @@ describe("[TRANFORMATION] Tests", function () {
             lpInterface.decodeEventLog("Swap", event.data, event.topics)
           )[0];
 
+        const ethOut = swapEvent.amount0Out.eq(0)
+          ? swapEvent.amount1Out
+          : swapEvent.amount0Out;
+
         const sellerWETHBalanceAfter = await testWETH.balanceOf(seller.address);
 
         expect(
           sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
-        ).to.eq(swapEvent.amount1Out.toString());
+        ).to.eq(ethOut.toString());
 
         await checkExpectedEvents(
           tx,
@@ -1353,6 +1353,10 @@ describe("[TRANFORMATION] Tests", function () {
             lpInterface.decodeEventLog("Swap", event.data, event.topics)
           )[0];
 
+        const ethOut = swapEvent.amount0Out.eq(0)
+          ? swapEvent.amount1Out
+          : swapEvent.amount0Out;
+
         const sellerETHBalanceAfter = await provider.getBalance(seller.address);
 
         expect(
@@ -1360,7 +1364,7 @@ describe("[TRANFORMATION] Tests", function () {
         ).to.eq(
           receipt.effectiveGasPrice
             .mul(receipt.gasUsed)
-            .sub(swapEvent.amount1Out)
+            .sub(ethOut)
             .abs()
             .toString()
         );

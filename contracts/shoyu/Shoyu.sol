@@ -51,17 +51,12 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         _refundExcessETH();
     }
 
-    function _transferETH(address to, uint256 amount) internal {
-        assembly {
-            let success := call(gas(), to, amount, 0, 0, 0, 0)
-            if eq(success, 0) { revert(0, 0) }
-        }
-    }
-
+    /// @dev Internal function to return any left over ETH to `msg.sender`.
     function _refundExcessETH() internal {
-        uint256 balance = address(this).balance;
-        if (balance > 0) {
-            _transferETH(msg.sender, balance);
+        assembly {
+            if gt(selfbalance(), 0) {
+                let success := call(gas(), caller(), selfbalance(), 0, 0, 0, 0)
+            }
         }
     }
 
@@ -76,54 +71,6 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         uint256 amount
     ) external onlyOwner {
         ERC20(token).approve(operator, amount);
-    }
-
-    /// @dev This function is used by the contract owner to retrieve ETH
-    ///      that has been stuck in the contract.
-    /// @param to           The recipient of the retrieved asset.
-    /// @param amount       The amount of ETH to retrieve.
-    function retrieveETH(address to, uint256 amount) onlyOwner external {
-        _transferETH(to, amount);
-    }
-
-    /// @dev This function is used by the contract owner to retrieve ERC20
-    ///      tokens that have become stuck in the contract.
-    /// @param token        The ERC20 token to retrieve.
-    /// @param to           The recipient of the retrieved asset.
-    /// @param amount       The amount of ERC20 to retrieve.
-    function retrieveERC20(address token, address to, uint256 amount) onlyOwner external {
-        ERC20(token).transfer(to, amount);
-    }
-
-    /// @dev This function is used by the contract owner to retrieve ERC721
-    ///      assets that have become stuck in the contract.
-    /// @param token        The ERC721 token to retrieve.
-    /// @param tokenIds     The tokenIds to retrieve.
-    /// @param to           The recipient of the retrieved asset.
-    function retrieveERC721(
-        address token,
-        uint256[] calldata tokenIds,
-        address to
-    ) onlyOwner external {
-        uint256 length = tokenIds.length;
-        for (uint256 i; i < length; ++i) {
-            ERC721(token).safeTransferFrom(address(this), to, tokenIds[i]);
-        }
-    }
-
-    /// @dev This function is used by the contract owner to retrieve ERC1155
-    ///      assets that have become stuck in the contract.
-    /// @param token        The ERC721 token to retrieve.
-    /// @param tokenIds     The tokenIds to retrieve.
-    /// @param amounts      The amounts of each tokenIds to retrieve.
-    /// @param to           The recipient of the retrieved asset.
-    function retrieveERC1155(
-        address token,
-        uint256[] calldata tokenIds,
-        uint256[] calldata amounts,
-        address to
-    ) onlyOwner external {
-        ERC1155(token).safeBatchTransferFrom(address(this), to, tokenIds, amounts, "");
     }
 
     /// @dev Fallback for just receiving ether.
