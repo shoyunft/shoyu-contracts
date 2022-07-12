@@ -141,6 +141,43 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
         }
     }
 
+    /// @dev Function to return any excess ERC20 tokens from address(this)
+    ///      to `msg.sender`.
+    /// @param token        The token to return to the caller.
+    function returnERC20(address token) external payable {
+        uint256 balance = ERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            ERC20(token).transfer(msg.sender, balance);
+        }
+    }
+
+    /// @dev Function to return any left over ERC721 token from
+    ///      address(this) to `msg.sender`.
+    /// @param token        The token to return to the caller.
+    /// @param tokenId      The token identifier of the asset.
+    function returnERC721(address token, uint256 tokenId) external {
+        if (ERC721(token).ownerOf(tokenId) == address(this)) {
+            ERC721(token).transferFrom(address(this), msg.sender, tokenId);
+        }
+    }
+
+    /// @dev Function to return any excess ERC1155 token from
+    ///      address(this) to `msg.sender`.
+    /// @param token        The token to return to the caller.
+    /// @param tokenId      The token identifier of the asset.
+    function returnERC1155(address token, uint256 tokenId) external {
+        uint256 balance = ERC1155(token).balanceOf(address(this), tokenId);
+        if (balance > 0) {
+            ERC1155(token).safeTransferFrom(
+                address(this),
+                msg.sender,
+                tokenId,
+                balance,
+                ""
+            );
+        }
+    }
+
     /// @dev Transfers some amount of ETH to the given recipient and
     ///      reverts if the transfer fails.
     /// @param to       The recipient of the ETH.

@@ -64,7 +64,7 @@ export function encodeFulfillAvailableAdvancedOrdersParams(
   offerFullfillments: any[][],
   considerationFulfillments: any[][],
   fulfillerConduitKey: any,
-  receipt: any,
+  recipient: any,
   maximumFulfilled: any
 ) {
   return defaultAbiCoder.encode(
@@ -83,7 +83,7 @@ export function encodeFulfillAvailableAdvancedOrdersParams(
       offerFullfillments,
       considerationFulfillments,
       fulfillerConduitKey,
-      receipt,
+      recipient,
       maximumFulfilled,
     ]
   );

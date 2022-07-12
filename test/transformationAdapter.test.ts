@@ -1128,7 +1128,7 @@ describe("[TRANFORMATION] Tests", function () {
         ).to.eq(
           receipt.effectiveGasPrice
             .mul(receipt.gasUsed)
-            .sub(swapEvent.amount0Out)
+            .sub(swapEvent.amount1Out)
             .abs()
             .toString()
         );
@@ -1241,7 +1241,7 @@ describe("[TRANFORMATION] Tests", function () {
 
         expect(
           sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
-        ).to.eq(swapEvent.amount0Out.toString());
+        ).to.eq(swapEvent.amount1Out.toString());
 
         await checkExpectedEvents(
           tx,
@@ -1360,7 +1360,7 @@ describe("[TRANFORMATION] Tests", function () {
         ).to.eq(
           receipt.effectiveGasPrice
             .mul(receipt.gasUsed)
-            .sub(swapEvent.amount0Out)
+            .sub(swapEvent.amount1Out)
             .abs()
             .toString()
         );

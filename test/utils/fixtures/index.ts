@@ -887,7 +887,7 @@ export const seaportFixture = async (owner: Wallet) => {
                 x.args.to === consideration.recipient
             );
 
-          expect(transferLogs.length).to.equal(1);
+          expect(transferLogs.length).to.greaterThanOrEqual(1);
           const transferLog = transferLogs[0];
           expect(transferLog.args.id.toString()).to.equal(
             consideration.identifier.toString()
