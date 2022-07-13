@@ -59,9 +59,8 @@ contract TransformationAdapter is LegacySwapAdapter {
         }
     }
 
-    /// @dev This function swaps an exact amount of tokens
-    ///      from address(this) and sends the output token
-    ///      to the specified recipient.
+    /// @dev This function swaps an exact amount of tokens from address(this)
+    ///      and sends a mimimum amount of output token to the specified recipient.
     /// @param amountIn         The exact amount of input token to be spent.
     /// @param amountOutMin     The minimum amount of output token to be received.
     /// @param path             The swap path.
@@ -76,6 +75,34 @@ contract TransformationAdapter is LegacySwapAdapter {
     ) public payable {
         uint256 amountOut = _legacySwapExactIn(
             amountIn,
+            amountOutMin,
+            path,
+            unwrapNative ? address(this) : to
+        );
+
+        if (unwrapNative) {
+            IWETH(WETH).withdraw(amountOut);
+            if (to != address(this)) {
+                _transferETH(to, amountOut);
+            }
+        }
+    }
+
+    /// @dev This function performs the swaps as outlined in `path`. This contract's
+    ///      entire balance of input token will be swapped for a minimum amount of
+    ///      output token, sent to the specified recipient.
+    /// @param amountOutMin     The minimum amount of output token to be received.
+    /// @param path             The swap path.
+    /// @param to               The recipient of output token.
+    /// @param unwrapNative     Flag to unwrap for native token if output token is WETH.
+    function swapMaxIn(
+        uint256 amountOutMin,
+        address[] memory path,
+        address payable to,
+        bool unwrapNative
+    ) public payable {
+        uint256 amountOut = _legacySwapExactIn(
+            ERC20(path[0]).balanceOf(address(this)),
             amountOutMin,
             path,
             unwrapNative ? address(this) : to

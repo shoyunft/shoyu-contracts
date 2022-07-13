@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-// Adapter from: https://github.com/sushiswap/limit-order/blob/a901749362691acd307f2370a876a33d33cde53e/contracts/libraries/UniswapV2Library.sol
+// Adapted from: https://github.com/sushiswap/limit-order/blob/a901749362691acd307f2370a876a33d33cde53e/contracts/libraries/UniswapV2Library.sol
 
 import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
 

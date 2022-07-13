@@ -6,3 +6,8 @@ enum TokenSource {
     CONDUIT,
     BENTO
 }
+
+struct Adapter {
+    address adapterAddress;
+    bool isActive;
+}

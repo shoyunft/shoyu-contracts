@@ -4,9 +4,8 @@ pragma solidity >=0.8.7;
 import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
 import "../Transfer/ConduitAdapter.sol";
 import "../Transfer/TransferAdapter.sol";
-import { SwapExactOutDetails } from "../../lib/ShoyuStructs.sol";
 import { pairFor, sortTokens, getAmountsIn, getAmountsOut } from "../../lib/LibSushi.sol";
-import { TokenSource } from "../../lib/ShoyuEnums.sol";
+import { TokenSource } from "../../lib/LibShoyu.sol";
 
 contract LegacySwapAdapter is TransferAdapter {
     /// @dev The UniswapV2Factory address.

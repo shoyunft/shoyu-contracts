@@ -6,7 +6,7 @@ import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./ConduitAdapter.sol";
 import "./BentoAdapter.sol";
-import { TokenSource } from "../../lib/ShoyuEnums.sol";
+import { TokenSource } from "../../lib/LibShoyu.sol";
 
 contract TransferAdapter is ConduitAdapter, BentoAdapter {
     constructor(
