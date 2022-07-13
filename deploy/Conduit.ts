@@ -40,6 +40,8 @@ const deployFunction: DeployFunction = async function ({
   const { conduit: conduitAddress, exists } =
     await conduitController.getConduit(conduitKey);
 
+  console.log("ConduitKey:", conduitKey);
+
   if (exists) {
     console.log('reusing "Conduit" at', conduitAddress);
   } else {
