@@ -5,13 +5,14 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./lib/AdapterRegistry.sol";
 import "../sushiswap/IBentoBoxMinimal.sol";
 
-contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     AdapterRegistry public adapterRegistry;
 
     function initialize(address _adapterRegistery, address _bentobox) initializer public {
@@ -28,7 +29,7 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
     function cook(
         uint8[] calldata adapterIds,
         bytes[] calldata datas
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused nonReentrant {
         uint256 length = adapterIds.length;
         for (uint256 i; i < length; ++i) {
             (
