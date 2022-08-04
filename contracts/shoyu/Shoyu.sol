@@ -84,7 +84,7 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         uint256,
         uint256,
         bytes calldata
-    ) public virtual returns (bytes4) {
+    ) public pure returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
@@ -94,7 +94,7 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) public virtual returns (bytes4) {
+    ) public pure returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 
@@ -104,7 +104,7 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         address,
         uint256,
         bytes calldata
-    ) external virtual returns (bytes4) {
+    ) external pure returns (bytes4) {
         return 0x150b7a02;
     }
 
@@ -113,7 +113,7 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
         address,
         uint256,
         bytes calldata
-    ) external virtual returns (bytes4) {
+    ) external pure returns (bytes4) {
         return 0xf0b9e5ba;
     }
 
