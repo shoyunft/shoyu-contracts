@@ -124,7 +124,7 @@ contract TransformationAdapter is LegacySwapAdapter {
     function unwrapNativeToken(
         uint256 amount,
         address payable to
-    ) public payable {
+    ) public {
         IWETH(WETH).withdraw(amount);
         if (to != address(this)) {
             _transferETH(to, amount);

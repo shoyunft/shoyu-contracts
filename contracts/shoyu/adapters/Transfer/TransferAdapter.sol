@@ -144,7 +144,7 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
     /// @dev Function to return any excess ERC20 tokens from address(this)
     ///      to `msg.sender`.
     /// @param token        The token to return to the caller.
-    function returnERC20(address token) external payable {
+    function returnERC20(address token) external {
         uint256 balance = ERC20(token).balanceOf(address(this));
         if (balance > 0) {
             ERC20(token).transfer(msg.sender, balance);

@@ -103,21 +103,26 @@ describe("[Transfer] Tests", function () {
 
   describe("Tests return asset functions", async () => {
     it("User can return excess ERC20 tokens", async () => {
-      // seller creates listing for 1ERC721 at price of 1WETH + .1WETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+      // buyer creates offer for 1ERC721 at price of 1WETH + .1WETH fee
+      const nftId = await mintAndApprove721(seller, shoyuContract.address);
 
-      const offer = [getTestItem721(nftId)];
+      await testWETH.connect(buyer).deposit({ value: parseEther("2") });
+      await testWETH
+        .connect(buyer)
+        .approve(marketplaceContract.address, MaxUint256);
 
-      const consideration = [
+      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+      const offer = [
         getTestItem20(
-          parseEther("1"),
-          parseEther("1"),
-          seller.address,
+          parseEther("1.1"),
+          parseEther("1.1"),
+          undefined,
           testWETH.address
         ),
+      ];
+
+      const consideration = [
+        getTestItem721(nftId, 1, 1, buyer.address),
         getTestItem20(
           parseEther(".1"),
           parseEther(".1"),
@@ -127,44 +132,52 @@ describe("[Transfer] Tests", function () {
       ];
 
       const { order, orderHash } = await createOrder(
-        seller,
+        buyer,
         zone,
         offer,
         consideration,
         0 // FULL_OPEN
       );
 
-      const value = parseEther("1.1");
-
-      // buyer fills order through Shoyu contract
-      // and wraps ETH for WETH before filling the order
-
       await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1, 0, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "wrapNativeToken",
-              [value.add(parseEther("1"))] // extra 1WETH
-            ),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              0,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
+        const tx = shoyuContract
+          .connect(seller)
+          .cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
               ),
-            ]),
-            transformationAdapter.interface.encodeFunctionData("returnERC20", [
-              testWETH.address,
-            ]),
-            transformationAdapter.interface.encodeFunctionData("returnERC20", [
-              testWETH.address,
-            ]),
-          ],
-          { value: value.add(parseEther("1")) }
-        );
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "returnERC20",
+                [testWETH.address]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "returnERC20",
+                [testWETH.address]
+              ),
+            ]
+          );
 
         const receipt = await (await tx).wait();
 
@@ -175,20 +188,12 @@ describe("[Transfer] Tests", function () {
             {
               order,
               orderHash,
-              fulfiller: buyer.address,
+              fulfiller: shoyuContract.address,
             },
           ],
           [
             {
-              item: {
-                ...getTestItem20(
-                  parseEther("1"),
-                  parseEther("1"),
-                  buyer.address,
-                  testWETH.address
-                ),
-                amount: parseEther("1"),
-              },
+              item: consideration[0],
               offerer: shoyuContract.address,
               conduitKey: toKey(false),
             },
