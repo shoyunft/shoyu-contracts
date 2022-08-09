@@ -12,13 +12,11 @@ contract TransformationAdapter is LegacySwapAdapter {
         address _weth,
         address _factory,
         bytes32 _pairCodeHash,
-        address _conduitController,
-        address _bentobox
+        address _conduitController
     ) LegacySwapAdapter(
         _factory,
         _pairCodeHash,
-        _conduitController,
-        _bentobox
+        _conduitController
     ) {
         WETH = _weth;
     }

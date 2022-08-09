@@ -5,23 +5,15 @@ import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./ConduitAdapter.sol";
-import "./BentoAdapter.sol";
 import { TokenSource } from "../../lib/LibShoyu.sol";
 
-contract TransferAdapter is ConduitAdapter, BentoAdapter {
-    constructor(
-        address _conduitController,
-        address _bentoBox
-    )
-        ConduitAdapter(_conduitController)
-        BentoAdapter(_bentoBox)
-    {}
+contract TransferAdapter is ConduitAdapter {
+    constructor(address _conduitController) ConduitAdapter(_conduitController) {}
 
     /// @dev Function to transfer ERC20 tokens from `msg.sender`
     ///      to a given recipient. Assets can be transferred from
-    ///      a user's bentobox or wallet. If funds are transferred
-    ///      from a user's wallet, approvals can be sourced from the
-    ///      Shoyu contract or Seaport Conduit.
+    ///      a user's wallet with approvals being sourced from
+    ///      Shoyu contract or Shoyu's Seaport Conduit.
     /// @param token        The ERC20 token to transfer.
     /// @param to           The recipient of the transfer.
     /// @param amount       The amount to transfer.
@@ -46,19 +38,6 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
                 amount,
                 conduitKey
             );
-        } else if (source == TokenSource.BENTO) {
-            bool unwrapBento = abi.decode(data, (bool));
-
-            _transferERC20FromBentoBox(
-                token,
-                msg.sender,
-                to,
-                amount,
-                0,
-                unwrapBento
-            );
-        } else {
-            revert("transferERC20From/INVALID_TOKEN_SOURCE");
         }
     }
 
@@ -94,8 +73,6 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
                 tokenId,
                 conduitKey
             );
-        } else {
-            revert("transferERC721From/INVALID_TOKEN_SOURCE");
         }
     }
 
@@ -136,8 +113,6 @@ contract TransferAdapter is ConduitAdapter, BentoAdapter {
                 amount,
                 conduitKey
             );
-        } else {
-            revert("transferERC1155From/INVALID_TOKEN_SOURCE");
         }
     }
 

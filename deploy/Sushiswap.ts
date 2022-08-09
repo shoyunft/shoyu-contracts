@@ -25,12 +25,6 @@ const deployFunction: DeployFunction = async function ({
     args: [sushiswapFactory.address, weth.address],
   });
 
-  const bentobox = await deploy("BentoBoxV1", {
-    from: deployer,
-    args: [weth.address],
-  });
-
-  console.log("Bentobox deployed at ", bentobox.address);
   console.log("Sushiswap factory deployed at ", sushiswapFactory.address);
   console.log("Sushiswap router deployed at ", sushiswapRouter.address);
 };

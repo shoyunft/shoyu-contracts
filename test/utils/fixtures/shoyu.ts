@@ -1,6 +1,6 @@
 import { Contract, Signer } from "ethers";
 import { MaxUint256 } from "@ethersproject/constants";
-import { deployments, ethers, upgrades } from "hardhat";
+import { deployments, ethers } from "hardhat";
 import { deployContract } from "../contracts";
 
 export const shoyuFixture = async (
@@ -17,8 +17,6 @@ export const shoyuFixture = async (
 
   const sushiswapRouter = await ethers.getContract("UniswapV2Router02");
 
-  const bentobox = await ethers.getContract("BentoBoxV1");
-
   const pairCodeHash = await sushiswapFactory.pairCodeHash();
 
   const transformationAdapter = await deployContract(
@@ -27,8 +25,7 @@ export const shoyuFixture = async (
     testWETH.address,
     sushiswapFactory.address,
     pairCodeHash,
-    conduitController.address,
-    bentobox.address
+    conduitController.address
   );
 
   const seaportAdapter = await deployContract(
@@ -44,18 +41,15 @@ export const shoyuFixture = async (
     [transformationAdapter.address, seaportAdapter.address]
   );
 
-  const shoyuFactory = await ethers.getContractFactory("Shoyu");
+  console.log("Adapter registry deployed at", adapterRegistry.address);
 
-  const shoyuContract = await upgrades.deployProxy(
-    shoyuFactory,
-    [adapterRegistry.address, bentobox.address],
-    {
-      initializer: "initialize",
-      unsafeAllow: ["delegatecall"],
-    }
+  const shoyuContract = await deployContract(
+    "Shoyu",
+    owner as any,
+    adapterRegistry.address
   );
 
-  await shoyuContract.deployed();
+  console.log("Shoyu deployed at", shoyuContract.address);
 
   await shoyuContract.approveERC20(
     testWETH.address,
@@ -66,18 +60,6 @@ export const shoyuFixture = async (
   await shoyuContract.approveERC20(
     testERC20.address,
     seaport.address,
-    MaxUint256
-  );
-
-  await shoyuContract.approveERC20(
-    testWETH.address,
-    bentobox.address,
-    MaxUint256
-  );
-
-  await shoyuContract.approveERC20(
-    testERC20.address,
-    bentobox.address,
     MaxUint256
   );
 
@@ -86,7 +68,6 @@ export const shoyuFixture = async (
     testWETH,
     transformationAdapter,
     seaportAdapter,
-    bentobox,
     adapterRegistry,
     sushiswapRouter,
     sushiswapFactory,

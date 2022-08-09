@@ -3,8 +3,7 @@ pragma solidity >=0.8.13;
 
 enum TokenSource {
     WALLET,
-    CONDUIT,
-    BENTO
+    CONDUIT
 }
 
 struct Adapter {

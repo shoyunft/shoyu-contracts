@@ -16,9 +16,8 @@ contract LegacySwapAdapter is TransferAdapter {
     constructor(
         address _factory,
         bytes32 _pairCodeHash,
-        address _conduitController,
-        address _bentobox
-    ) TransferAdapter (_conduitController, _bentobox) {
+        address _conduitController
+    ) TransferAdapter (_conduitController) {
         factory = _factory;
         pairCodeHash = _pairCodeHash;
     }

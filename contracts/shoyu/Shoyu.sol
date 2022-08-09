@@ -1,25 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./lib/AdapterRegistry.sol";
-import "../sushiswap/IBentoBoxMinimal.sol";
 
-contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
-    AdapterRegistry public adapterRegistry;
+contract Shoyu is Ownable, Pausable, ReentrancyGuard {
+    AdapterRegistry public immutable adapterRegistry;
 
-    function initialize(address _adapterRegistery, address _bentobox) initializer public {
+    constructor(address _adapterRegistery) {
         adapterRegistry = AdapterRegistry(_adapterRegistery);
-        IBentoBoxMinimal(_bentobox).registerProtocol();
-
-        __Ownable_init();
     }
 
     /// @dev This function executes a set of actions and allows composability
@@ -115,7 +109,4 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
     ) external pure returns (bytes4) {
         return 0xf0b9e5ba;
     }
-
-    /// @dev Required by UUPSUpgradeable
-    function _authorizeUpgrade(address) internal override onlyOwner {}
 }
