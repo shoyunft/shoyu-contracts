@@ -7,8 +7,8 @@ import "seaport/contracts/interfaces/ConsiderationInterface.sol";
 contract SeaportAdapter {
     address public immutable seaportAddress;
 
-    bytes4 private constant fulfillAdvancedOrderSelector = 0xe7acab24;
-    bytes4 private constant fulfillAvailableAdvancedOrdersSelector = 0x87201b41;
+    bytes4 private constant fulfillAdvancedOrderSelector = ConsiderationInterface.fulfillAdvancedOrder.selector;
+    bytes4 private constant fulfillAvailableAdvancedOrdersSelector = ConsiderationInterface.fulfillAvailableAdvancedOrders.selector;
 
     constructor(address _seaportAddress) {
         seaportAddress = _seaportAddress;
