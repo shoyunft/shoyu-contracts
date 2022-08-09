@@ -391,7 +391,10 @@ describe("[Transfer] Tests", function () {
       // buyer creates offer for ERC1155 at price of 1WETH + .1WETH fee each
       const { nftId, amount } = await mintAndApprove1155(
         seller,
-        shoyuContract.address
+        shoyuContract.address,
+        1,
+        undefined,
+        1000
       );
 
       const offer = [

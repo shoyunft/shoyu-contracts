@@ -54,7 +54,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
-                _transferETH(to, amountOut);
+                to.transfer(amountOut);
             }
         }
     }
@@ -83,7 +83,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
-                _transferETH(to, amountOut);
+                to.transfer(amountOut);
             }
         }
     }
@@ -111,7 +111,7 @@ contract TransformationAdapter is LegacySwapAdapter {
         if (unwrapNative) {
             IWETH(WETH).withdraw(amountOut);
             if (to != address(this)) {
-                _transferETH(to, amountOut);
+                to.transfer(amountOut);
             }
         }
 
@@ -127,7 +127,7 @@ contract TransformationAdapter is LegacySwapAdapter {
     ) public {
         IWETH(WETH).withdraw(amount);
         if (to != address(this)) {
-            _transferETH(to, amount);
+            to.transfer(amount);
         }
     }
 
