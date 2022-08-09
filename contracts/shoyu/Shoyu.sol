@@ -54,10 +54,9 @@ contract Shoyu is Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUp
 
     /// @dev Internal function to return any left over ETH to `msg.sender`.
     function _refundExcessETH() internal {
-        assembly {
-            if gt(selfbalance(), 0) {
-                let success := call(gas(), caller(), selfbalance(), 0, 0, 0, 0)
-            }
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            payable(msg.sender).transfer(balance);
         }
     }
 
