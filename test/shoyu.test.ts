@@ -102,6 +102,120 @@ describe("[SHOYU] Tests", function () {
       .updateChannel(conduitOne.address, shoyuContract.address, true);
   });
 
+  describe("[SHOYU]", async () => {
+    it("Contract owner can pause and unpause `cook`", async () => {
+      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+      const nftId = await mintAndApprove721(
+        seller,
+        marketplaceContract.address
+      );
+
+      const offer = [getTestItem721(nftId)];
+
+      const consideration = [
+        getItemETH(parseEther("1"), parseEther("1"), seller.address),
+        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+      ];
+
+      const { order, orderHash, value } = await createOrder(
+        seller,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      // buyer fills order through Shoyu contract
+      // and unwraps WETH for ETH before filling the order
+      await testWETH.connect(buyer).deposit({ value });
+      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
+
+      await expect(shoyuContract.connect(buyer).pause()).to.be.reverted;
+
+      await shoyuContract.pause();
+
+      await expect(
+        shoyuContract.connect(buyer).cook(
+          [0, 0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC20From",
+              [
+                testWETH.address, // token
+                shoyuContract.address, // to
+                value, // amount
+                TokenSource.WALLET, // tokenSource
+                "0x", // transferData
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData(
+              "unwrapNativeToken",
+              [
+                value, // amount
+                shoyuContract.address, // to
+              ]
+            ),
+            seaportAdapter.interface.encodeFunctionData("fulfill", [
+              value,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
+              ),
+            ]),
+          ]
+        )
+      ).to.be.reverted;
+
+      await shoyuContract.unpause();
+
+      await withBalanceChecks([order], 0, null, async () => {
+        const tx = shoyuContract.connect(buyer).cook(
+          [0, 0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC20From",
+              [
+                testWETH.address, // token
+                shoyuContract.address, // to
+                value, // amount
+                TokenSource.WALLET, // tokenSource
+                "0x", // transferData
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData(
+              "unwrapNativeToken",
+              [
+                value, // amount
+                shoyuContract.address, // to
+              ]
+            ),
+            seaportAdapter.interface.encodeFunctionData("fulfill", [
+              value,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
+              ),
+            ]),
+          ]
+        );
+        const receipt = await (await tx).wait();
+
+        await checkExpectedEvents(tx, receipt, [
+          {
+            order,
+            orderHash,
+            fulfiller: buyer.address,
+          },
+        ]);
+        return receipt;
+      });
+    });
+  });
+
   describe("Tests `cook()` function", async () => {
     describe("[REVERTS]", async () => {
       it("Reverts if an inactive adapter is called", async () => {

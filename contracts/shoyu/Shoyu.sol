@@ -67,6 +67,16 @@ contract Shoyu is Ownable, Pausable, ReentrancyGuard {
         ERC20(token).approve(operator, amount);
     }
 
+    /// @dev Allows contract owner to pause `cook()`.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @dev Allows contract owner to unpause this contract.
+    function unpause() external onlyOwner{
+        _unpause();
+    }
+
     /// @dev Fallback for just receiving ether.
     receive() external payable {}
 
