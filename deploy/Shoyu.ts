@@ -88,11 +88,14 @@ const deployFunction: DeployFunction = async function ({
   });
 
   if (shoyu.newlyDeployed) {
-    await execute("Shoyu", { from: deployer }, "approveERC20", [
+    await execute(
+      "Shoyu",
+      { from: deployer },
+      "approveERC20",
       wethAddress,
       seaport.address,
-      MaxUint256,
-    ]);
+      MaxUint256
+    );
 
     console.log("Shoyu deployed at address", shoyu.address);
   } else {
