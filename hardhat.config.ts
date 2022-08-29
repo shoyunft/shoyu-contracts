@@ -9,6 +9,7 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
+import "hardhat-abi-exporter";
 
 import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from "hardhat/builtin-tasks/task-names";
 
@@ -40,6 +41,19 @@ task("accounts", "Prints the list of accounts", async (args, { ethers }) => {
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
+  abiExporter: {
+    path: "./abis",
+    runOnCompile: true,
+    only: [
+      "Shoyu",
+      "AdapterRegistry",
+      "SeaportAdapter",
+      "TransformationAdapter",
+    ],
+    clear: true,
+    flat: true,
+    spacing: 2,
+  },
   solidity: {
     compilers: [
       {
