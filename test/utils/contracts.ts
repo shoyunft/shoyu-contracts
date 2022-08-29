@@ -21,7 +21,7 @@ export const deployContract = async <C extends Contract>(
       ? references.get(name) || name
       : name;
 
-  const f = await ethers.getContractFactory(nameWithReference, signer);
+  const f = await ethers.getContractFactory(nameWithReference, signer as any);
   const c = await f.deploy(...args);
   return c as C;
 };
