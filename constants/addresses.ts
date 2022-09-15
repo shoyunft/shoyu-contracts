@@ -1,9 +1,9 @@
 import { ChainId } from "@sushiswap/core-sdk";
 
 export const CONDUIT_CONTROLLER_ADDRESS: { [chainId: number]: string } = {
-  [ChainId.ETHEREUM]: "0x00000000006ce100a8b5ed8edf18ceef9e500697",
-  [ChainId.RINKEBY]: "0x00000000006ce100a8b5ed8edf18ceef9e500697",
-  [ChainId.GÖRLI]: "0x00000000006ce100a8b5ed8edf18ceef9e500697",
+  [ChainId.ETHEREUM]: "0x00000000F9490004C11Cef243f5400493c00Ad63",
+  [ChainId.RINKEBY]: "0x00000000F9490004C11Cef243f5400493c00Ad63",
+  [ChainId.GÖRLI]: "0x00000000F9490004C11Cef243f5400493c00Ad63",
 };
 
 export const SEAPORT_ADDRESS: { [chainId: number]: string } = {

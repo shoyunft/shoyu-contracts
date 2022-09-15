@@ -1,8 +1,11 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { CONDUIT_CONTROLLER_ADDRESS } from "../constants/addresses";
+import {
+  CONDUIT_CONTROLLER_ADDRESS,
+  SEAPORT_ADDRESS,
+} from "../constants/addresses";
 
-const NONCE = "555555555555555";
+const NONCE = "000000000000000";
 
 const deployFunction: DeployFunction = async function ({
   ethers,
@@ -18,15 +21,20 @@ const deployFunction: DeployFunction = async function ({
 
   const chainId = Number(await getChainId());
 
-  let conduitController;
+  let conduitController, seaportAddress;
 
   if (chainId === 31337) {
     conduitController = await ethers.getContract("ConduitController");
-  } else if (chainId in CONDUIT_CONTROLLER_ADDRESS) {
+    seaportAddress = (await ethers.getContract("Seaport")).address;
+  } else if (
+    chainId in CONDUIT_CONTROLLER_ADDRESS &&
+    chainId in SEAPORT_ADDRESS
+  ) {
     conduitController = await ethers.getContractAt(
       "ConduitController",
       CONDUIT_CONTROLLER_ADDRESS[chainId]
     );
+    seaportAddress = SEAPORT_ADDRESS[chainId];
   } else {
     throw Error("No CONDUITCONTROLLER!");
   }
@@ -47,12 +55,24 @@ const deployFunction: DeployFunction = async function ({
   } else {
     const { gasLimit } = await ethers.provider.getBlock("latest");
 
-    const tx = await conduitController.createConduit(conduitKey, deployer, {
+    let tx = await conduitController.createConduit(conduitKey, deployer, {
       gasLimit,
     });
     await tx.wait();
 
-    await conduitController.updateChannel(conduitAddress, shoyu.address, true);
+    tx = await conduitController.updateChannel(
+      conduitAddress,
+      seaportAddress,
+      true
+    );
+    await tx.wait();
+
+    tx = await conduitController.updateChannel(
+      conduitAddress,
+      shoyu.address,
+      true
+    );
+    await tx.wait();
 
     console.log("Conduit deployed at address", conduitAddress);
   }
