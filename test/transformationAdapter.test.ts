@@ -323,6 +323,233 @@ describe("[TRANFORMATION] Tests", function () {
       });
     });
 
+    it("User buys ERC721 listed in ETH by paying with WETH & ETH", async () => {
+      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+      const nftId = await mintAndApprove721(
+        seller,
+        marketplaceContract.address
+      );
+
+      const offer = [getTestItem721(nftId)];
+
+      const consideration = [
+        getItemETH(parseEther("1"), parseEther("1"), seller.address),
+        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+      ];
+
+      const { order, orderHash, value } = await createOrder(
+        seller,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      // buyer fills order through Shoyu contract
+      // and unwraps WETH for ETH before filling the order
+      await testWETH.connect(buyer).deposit({ value });
+      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
+
+      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
+
+      await withBalanceChecks([order], 0, null, async () => {
+        const tx = shoyuContract.connect(buyer).cook(
+          [0, 0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC20From",
+              [
+                testWETH.address, // token
+                shoyuContract.address, // to
+                value.div(2), // amount
+                TokenSource.WALLET, // tokenSource
+                "0x", // transferData
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData(
+              "unwrapNativeToken",
+              [
+                value.div(2), // amount
+                shoyuContract.address, // to
+              ]
+            ),
+            seaportAdapter.interface.encodeFunctionData("fulfill", [
+              value,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
+              ),
+            ]),
+          ],
+          {
+            value: value.div(2),
+          }
+        );
+        const receipt = await (await tx).wait();
+
+        await checkExpectedEvents(tx, receipt, [
+          {
+            order,
+            orderHash,
+            fulfiller: buyer.address,
+          },
+        ]);
+        return receipt;
+      });
+    });
+
+    it("User buys ERC721 listed in ETH by paying with ERC20 & ETH", async () => {
+      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+      const nftId = await mintAndApprove721(
+        seller,
+        marketplaceContract.address
+      );
+
+      const offer = [getTestItem721(nftId)];
+
+      const consideration = [
+        getItemETH(parseEther("1"), parseEther("1"), seller.address),
+        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+      ];
+
+      const { order, orderHash, value } = await createOrder(
+        seller,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
+
+      await withBalanceChecks([order], 0, null, async () => {
+        const tx = shoyuContract.connect(buyer).cook(
+          [0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
+              value.div(2), // amountOut
+              MaxUint256, // amountInMax
+              [testERC20.address, testWETH.address], // path
+              shoyuContract.address, // to
+              TokenSource.WALLET, // tokenSource
+              "0x", // transferData
+              true, // unwrapNativeToken
+            ]),
+            seaportAdapter.interface.encodeFunctionData("fulfill", [
+              value,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
+              ),
+            ]),
+          ],
+          {
+            value: value.div(2),
+          }
+        );
+        const receipt = await (await tx).wait();
+
+        await checkExpectedEvents(tx, receipt, [
+          {
+            order,
+            orderHash,
+            fulfiller: buyer.address,
+          },
+        ]);
+        return receipt;
+      });
+    });
+
+    it("User buys ERC721 listed in ETH by paying with WETH, ERC20, & ETH", async () => {
+      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+      const nftId = await mintAndApprove721(
+        seller,
+        marketplaceContract.address
+      );
+
+      const offer = [getTestItem721(nftId)];
+
+      const consideration = [
+        getItemETH(parseEther("1"), parseEther("1"), seller.address),
+        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+      ];
+
+      const { order, orderHash, value } = await createOrder(
+        seller,
+        zone,
+        offer,
+        consideration,
+        0 // FULL_OPEN
+      );
+
+      // buyer fills order through Shoyu contract
+      // and unwraps WETH for ETH before filling the order
+      await testWETH.connect(buyer).deposit({ value });
+      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
+
+      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
+
+      await withBalanceChecks([order], 0, null, async () => {
+        const tx = shoyuContract.connect(buyer).cook(
+          [0, 0, 0, 1],
+          [
+            transformationAdapter.interface.encodeFunctionData(
+              "transferERC20From",
+              [
+                testWETH.address, // token
+                shoyuContract.address, // to
+                parseEther("0.5"), // amount
+                TokenSource.WALLET, // tokenSource
+                "0x", // transferData
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData(
+              "unwrapNativeToken",
+              [
+                parseEther("0.5"), // amount
+                shoyuContract.address, // to
+              ]
+            ),
+            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
+              parseEther("0.5"), // amountOut
+              MaxUint256, // amountInMax
+              [testERC20.address, testWETH.address], // path
+              shoyuContract.address, // to
+              TokenSource.WALLET, // tokenSource
+              "0x", // transferData
+              true, // unwrapNativeToken
+            ]),
+            seaportAdapter.interface.encodeFunctionData("fulfill", [
+              value,
+              encodeFulfillAdvancedOrderParams(
+                order,
+                [],
+                toKey(false),
+                buyer.address
+              ),
+            ]),
+          ],
+          {
+            value: parseEther("0.1"),
+          }
+        );
+        const receipt = await (await tx).wait();
+
+        await checkExpectedEvents(tx, receipt, [
+          {
+            order,
+            orderHash,
+            fulfiller: buyer.address,
+          },
+        ]);
+        return receipt;
+      });
+    });
+
     it("User buys ERC721 listed in WETH by wrapping ETH -> WETH", async () => {
       // seller creates listing for 1ERC721 at price of 1WETH + .1WETH fee
       const nftId = await mintAndApprove721(

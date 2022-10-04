@@ -40,7 +40,7 @@
     ],
     "name": "returnERC1155",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -53,7 +53,7 @@
     ],
     "name": "returnERC20",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -71,7 +71,7 @@
     ],
     "name": "returnERC721",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -213,7 +213,7 @@
     ],
     "name": "transferERC1155From",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -246,7 +246,7 @@
     ],
     "name": "transferERC20From",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -279,7 +279,7 @@
     ],
     "name": "transferERC721From",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -297,7 +297,7 @@
     ],
     "name": "unwrapNativeToken",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {

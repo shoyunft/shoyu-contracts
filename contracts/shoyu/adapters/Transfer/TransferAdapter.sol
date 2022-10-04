@@ -25,7 +25,7 @@ contract TransferAdapter is ConduitAdapter {
         uint256 amount,
         TokenSource source,
         bytes memory data
-    ) public {
+    ) public payable {
         if (source == TokenSource.WALLET) {
             ERC20(token).transferFrom(msg.sender, to, amount);
         } else if (source == TokenSource.CONDUIT) {
@@ -56,7 +56,7 @@ contract TransferAdapter is ConduitAdapter {
         uint256 tokenId,
         TokenSource source,
         bytes memory data
-    ) public {
+    ) public payable {
         if (source == TokenSource.WALLET) {
             ERC721(token).safeTransferFrom(
                 msg.sender,
@@ -93,7 +93,7 @@ contract TransferAdapter is ConduitAdapter {
         uint256 amount,
         TokenSource source,
         bytes memory data
-    ) public {
+    ) public payable {
         if (source == TokenSource.WALLET) {
             ERC1155(token).safeTransferFrom(
                 msg.sender,
@@ -119,7 +119,7 @@ contract TransferAdapter is ConduitAdapter {
     /// @dev Function to return any excess ERC20 tokens from address(this)
     ///      to `msg.sender`.
     /// @param token        The token to return to the caller.
-    function returnERC20(address token) external {
+    function returnERC20(address token) external payable {
         uint256 balance = ERC20(token).balanceOf(address(this));
         if (balance > 0) {
             ERC20(token).transfer(msg.sender, balance);
@@ -130,7 +130,7 @@ contract TransferAdapter is ConduitAdapter {
     ///      address(this) to `msg.sender`.
     /// @param token        The token to return to the caller.
     /// @param tokenId      The token identifier of the asset.
-    function returnERC721(address token, uint256 tokenId) external {
+    function returnERC721(address token, uint256 tokenId) external payable {
         if (ERC721(token).ownerOf(tokenId) == address(this)) {
             ERC721(token).transferFrom(address(this), msg.sender, tokenId);
         }
@@ -140,7 +140,7 @@ contract TransferAdapter is ConduitAdapter {
     ///      address(this) to `msg.sender`.
     /// @param token        The token to return to the caller.
     /// @param tokenId      The token identifier of the asset.
-    function returnERC1155(address token, uint256 tokenId) external {
+    function returnERC1155(address token, uint256 tokenId) external payable {
         uint256 balance = ERC1155(token).balanceOf(address(this), tokenId);
         if (balance > 0) {
             ERC1155(token).safeTransferFrom(
