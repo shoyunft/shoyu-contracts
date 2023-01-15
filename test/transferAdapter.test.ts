@@ -6,12 +6,7 @@ import { parseEther } from "ethers/lib/utils";
 
 import { faucet } from "./utils/impersonate";
 import { seaportFixture } from "./utils/fixtures";
-import {
-  getItemETH,
-  randomHex,
-  toFulfillmentComponents,
-  toKey,
-} from "./utils/encoding";
+import { randomHex, toFulfillmentComponents, toKey } from "./utils/encoding";
 import { shoyuFixture } from "./utils/fixtures/shoyu";
 import { TokenSource } from "./utils/contsants";
 import {
@@ -33,20 +28,16 @@ describe("[Transfer] Tests", function () {
   let owner: Wallet;
   let withBalanceChecks: any;
   let conduitController: any;
-  let mintAndApproveERC20: any;
   let mintAndApprove721: any;
   let mintAndApprove1155: any;
   let getTestItem20: any;
-  let mint721: any;
   let getTestItem721: any;
-  let mint1155: any;
   let getTestItem1155: any;
   let createOrder: any;
   let checkExpectedEvents: any;
   let seller: Wallet;
   let buyer: Wallet;
   let conduitOne: Contract;
-  let conduitKeyOne: any;
 
   after(async () => {
     await network.provider.request({
@@ -68,19 +59,15 @@ describe("[Transfer] Tests", function () {
 
     ({
       conduitOne,
-      conduitKeyOne,
       conduitController,
       testERC20,
-      mintAndApproveERC20,
       mintAndApprove721,
       mintAndApprove1155,
       getTestItem20,
       getTestItem721,
       getTestItem1155,
       testERC721,
-      mint721,
       testERC1155,
-      mint1155,
       getTestItem1155,
       marketplaceContract,
       createOrder,

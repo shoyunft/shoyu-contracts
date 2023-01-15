@@ -2,7 +2,7 @@
 pragma solidity >=0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import { Adapter } from "./LibShoyu.sol";
+import { Adapter } from "../lib/LibShoyu.sol";
 
 contract AdapterRegistry is Ownable {
     Adapter[] public adapters;

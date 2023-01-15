@@ -19,19 +19,22 @@ export const shoyuFixture = async (
 
   const pairCodeHash = await sushiswapFactory.pairCodeHash();
 
+  const bentobox = await ethers.getContract("BentoBoxV1");
+
+  const seaportAdapter = await deployContract(
+    "SeaportAdapter",
+    owner as any,
+    seaport.address
+  );
+
   const transformationAdapter = await deployContract(
     "TransformationAdapter",
     owner as any,
     testWETH.address,
     sushiswapFactory.address,
     pairCodeHash,
+    bentobox.address,
     conduitController.address
-  );
-
-  const seaportAdapter = await deployContract(
-    "SeaportAdapter",
-    owner as any,
-    seaport.address
   );
 
   const adapterRegistry = await deployContract(
@@ -71,5 +74,6 @@ export const shoyuFixture = async (
     adapterRegistry,
     sushiswapRouter,
     sushiswapFactory,
+    bentobox,
   };
 };
