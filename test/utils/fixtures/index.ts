@@ -577,14 +577,14 @@ export const seaportFixture = async (owner: Wallet) => {
       const elapsed = toBN(timestamp).sub(order.parameters.startTime as any);
       const remaining = duration.sub(elapsed);
 
-      const marketplaceContractEvents = (receipt.events as any[])
+      const marketplaceContractOrderFulfilledEvents = (receipt.events as any[])
         .filter((x) => {
           try {
-            marketplaceContract.interface.parseLog({
+            const { name } = marketplaceContract.interface.parseLog({
               data: x.data,
               topics: x.topics,
             });
-            return true;
+            return name === "OrderFulfilled";
           } catch (e) {
             return false;
           }
@@ -620,9 +620,9 @@ export const seaportFixture = async (owner: Wallet) => {
         })
         .filter((x) => x.orderHash === orderHash);
 
-      expect(marketplaceContractEvents.length).to.equal(1);
+      expect(marketplaceContractOrderFulfilledEvents.length).to.equal(1);
 
-      const event = marketplaceContractEvents[0];
+      const event = marketplaceContractOrderFulfilledEvents[0];
 
       expect(event.eventName).to.equal("OrderFulfilled");
       expect(event.eventSignature).to.equal(
@@ -635,6 +635,41 @@ export const seaportFixture = async (owner: Wallet) => {
       expect(event.offerer).to.equal(order.parameters.offerer);
       expect(event.zone).to.equal(order.parameters.zone);
       expect(event.recipient).to.equal(recipient);
+
+      const marketplaceContractOrdersMatchedEvents = (receipt.events as any[])
+        .filter((x) => {
+          try {
+            const { name } = marketplaceContract.interface.parseLog({
+              data: x.data,
+              topics: x.topics,
+            });
+            return name === "OrdersMatched";
+          } catch (e) {
+            return false;
+          }
+        })
+        .map((x) => {
+          const { args, name, signature } =
+            marketplaceContract.interface.parseLog({
+              data: x.data,
+              topics: x.topics,
+            });
+          return {
+            eventName: name,
+            eventSignature: signature,
+            orderHashes: args.orderHashes,
+          };
+        });
+      expect(marketplaceContractOrdersMatchedEvents.length).lessThanOrEqual(1);
+
+      if (marketplaceContractOrdersMatchedEvents.length === 1) {
+        expect(
+          marketplaceContractOrdersMatchedEvents[0].orderHashes.length
+        ).to.equal(orderGroups.length);
+        expect(
+          marketplaceContractOrdersMatchedEvents[0].orderHashes
+        ).to.include(event.orderHash);
+      }
 
       const { offerer, conduitKey, consideration, offer } = order.parameters;
       const compareEventItems = async (
@@ -787,10 +822,7 @@ export const seaportFixture = async (owner: Wallet) => {
             .filter(
               (x) =>
                 x.signature === "Transfer(address,address,uint256)" &&
-                x.args.from === event.offerer &&
-                (recipient !== constants.AddressZero
-                  ? x.args.to === recipient
-                  : true)
+                x.args.from === event.offerer
             );
 
           expect(transferLogs.length).to.equal(1);
