@@ -7,7 +7,7 @@ import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@sushiswap/trident/contracts/interfaces/IBentoBoxMinimal.sol";
 
 /// @title BentoAdapter
-/// @notice Adapter which provides all functions of BentoBox require by this contract.
+/// @notice Adapter which provides all functions of BentoBox required by this contract.
 /// @dev These are generic functions, make sure, only msg.sender, address(this) and address(bentoBox)
 /// are passed in the from param, or else the attacker can sifu user's funds in bentobox.
 contract BentoAdapter {

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.13;
 
-// Legacy Adapted from: https://github.com/sushiswap/limit-order/blob/a901749362691acd307f2370a876a33d33cde53e/contracts/libraries/UniswapV2Library.sol
+// Legacy functions adapted from: https://github.com/sushiswap/limit-order/blob/a901749362691acd307f2370a876a33d33cde53e/contracts/libraries/UniswapV2Library.sol
+// Trident functions adapted from: https://github.com/sushiswap/trident/blob/89b1cb6e17b9e2ec6c3b8825a8d78b8a0ab400d5/contracts/libraries/TridentRouterLibrary.sol
+
 import "@sushiswap/trident/contracts/interfaces/IPool.sol";
 import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
 

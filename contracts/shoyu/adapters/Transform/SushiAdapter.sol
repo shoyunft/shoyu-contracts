@@ -16,6 +16,10 @@ import {
 } from "../../lib/LibSushi.sol";
 import { TokenSource } from "../../lib/LibShoyu.sol";
 
+/// @title SushiAdapter
+/// @notice This adapter provides support for swapping ERC20 tokens using Trident & Legacy Sushi pools.
+/// @dev The swapExactOut functions transfer funds from `msg.sender`, whereas swapExactIn transfers funds
+/// from address(this).
 contract SushiAdapter is TransferAdapter, BentoAdapter {
     /// @dev The UniswapV2Factory address.
     address private immutable factory;
@@ -39,8 +43,11 @@ contract SushiAdapter is TransferAdapter, BentoAdapter {
     ///      performs the swaps outlined in `params`. An exact amount of the
     ///      output token is sent to the specified recipient.
     /// @notice Swaps token A to token B directly. Swaps are done on `bento` tokens.
-    /// @param params This includes the address of token A, pool, amount of token A to swap,
-    /// minimum amount of token B after the swap and data required by the pool for the swap.
+    /// @param params           This includes the address of token A, pool, amount of token A to swap,
+    ///                         minimum amount of token B after the swap and data required by the pool
+    ///                         for the swap.
+    /// @param tokenSource      The token / approval source for input token.
+    /// @param transferData     Additional data required depending on `tokenSource`.
     /// @dev Ensure that the pool is trusted before calling this function. The pool can steal users' tokens.
     function tridentSwapExactOut(
         ExactOutputParams memory params,
@@ -81,9 +88,11 @@ contract SushiAdapter is TransferAdapter, BentoAdapter {
     }
 
     /// @notice Swaps token A to token B directly. Swaps are done on `bento` tokens.
-    /// @param params This includes the address of token A, pool, amount of token A to swap,
-    /// minimum amount of token B after the swap and data required by the pool for the swap.
+    /// @param params       This includes the address of token A, pool, amount of token A to swap,
+    ///                     minimum amount of token B after the swap and data required by the pool
+    ///                     for the swap.
     /// @dev Ensure that the pool is trusted before calling this function. The pool can steal users' tokens.
+    /// @notice If `params.amountIn` is 0, it will the balance of address(this) will be sent instead.
     function tridentSwapExactIn(ExactInputParams memory params) external payable returns (uint256 amountOut) {
         if (params.amountIn == 0) {
             params.amountIn = ERC20(params.tokenIn).balanceOf(address(this));
@@ -117,7 +126,7 @@ contract SushiAdapter is TransferAdapter, BentoAdapter {
     /// @param path             The swap path.
     /// @param to               The recipient to receive output token.
     /// @param tokenSource      The token / approval source for input token.
-    /// @param transferData     Additional data required depending on `source`.
+    /// @param transferData     Additional data required depending on `tokenSource`.
     function legacySwapExactOut(
         uint256 amountOut,
         uint256 amountInMax,
@@ -159,6 +168,7 @@ contract SushiAdapter is TransferAdapter, BentoAdapter {
     /// @param amountOutMin     The minimum amount of output token to be received.
     /// @param path             The swap path.
     /// @param to               The recipient of output token.
+    /// @notice if `amountIn` is 0, the balance of address(this) will be sent instead.
     function legacySwapExactIn(
         uint256 amountIn,
         uint256 amountOutMin,

@@ -6,6 +6,10 @@ import { ConduitInterface } from "seaport/contracts/interfaces/ConduitInterface.
 import { ConduitTransfer } from "seaport/contracts/conduit/lib/ConduitStructs.sol";
 import { ConduitItemType } from "seaport/contracts/conduit/lib/ConduitEnums.sol";
 
+/// @title ConduitAdapter
+/// @notice Adapter which allows transferring assets using Shoyu's Seaport Conduit to source approvals.
+/// @dev These are generic functions, make sure only msg.sender or address(this) are passed in the from param,
+/// or else the attacker can sifu user's funds from conduit.
 contract ConduitAdapter {
     // Allow for interaction with the conduit controller.
     ConduitControllerInterface private immutable _CONDUIT_CONTROLLER;

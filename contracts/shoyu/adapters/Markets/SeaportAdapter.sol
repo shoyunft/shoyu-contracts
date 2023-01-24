@@ -4,6 +4,11 @@ pragma solidity >=0.8.11;
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "seaport/contracts/interfaces/ConsiderationInterface.sol";
 
+/// @title SeaportAdapter
+/// @notice Adapter which provides all order fulfillment functions of Seaport required by this contract.
+/// @dev When filling an Seaport order and the consideration items include one or more NFTs, use
+/// `approveBeforeFulfill` or `approveBeforeFulfillBatch` if the Shoyu contract has not already
+/// granted approval of the asset(s) to the Seaport contract.
 contract SeaportAdapter {
     address public immutable seaportAddress;
 
