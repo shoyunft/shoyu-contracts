@@ -5,6 +5,7 @@ import { expect } from "chai";
 import { Interface, parseEther } from "ethers/lib/utils";
 
 import IUNISWAPV2_ABI from "@sushiswap/core/build/abi/IUniswapV2Pair.json";
+import IPOOL from "@sushiswap/trident/artifacts/contracts/interfaces/IPool.sol/IPool.json";
 
 import { seedSushiswapPools } from "./utils/fixtures/sushi";
 import { faucet } from "./utils/impersonate";
@@ -13,6 +14,7 @@ import { getItemETH, randomHex, toKey } from "./utils/encoding";
 import { shoyuFixture } from "./utils/fixtures/shoyu";
 import { TokenSource } from "./utils/contsants";
 import { encodeFulfillAdvancedOrderParams } from "./utils/helpers";
+import { encodedSwapData } from "./utils/trident";
 
 describe("[SHOYU] Tests", function () {
   const provider = ethers.provider;
@@ -32,9 +34,7 @@ describe("[SHOYU] Tests", function () {
   let mintAndApprove721: any;
   let mintAndApprove1155: any;
   let getTestItem20: any;
-  let mint721: any;
   let getTestItem721: any;
-  let mint1155: any;
   let getTestItem1155: any;
   let createOrder: any;
   let checkExpectedEvents: any;
@@ -43,6 +43,9 @@ describe("[SHOYU] Tests", function () {
   let adapterRegistry: Contract;
   let conduitOne: Contract;
   let conduitKeyOne: any;
+
+  const tridentPoolInterface = new Interface(IPOOL.abi);
+  const legacyPoolInterface = new Interface(IUNISWAPV2_ABI);
 
   after(async () => {
     await network.provider.request({
@@ -74,9 +77,7 @@ describe("[SHOYU] Tests", function () {
       getTestItem721,
       getTestItem1155,
       testERC721,
-      mint721,
       testERC1155,
-      mint1155,
       getTestItem1155,
       marketplaceContract,
       createOrder,
@@ -221,12 +222,18 @@ describe("[SHOYU] Tests", function () {
       it("Reverts if an inactive adapter is called", async () => {
         await expect(
           shoyuContract.cook(
-            ["0"],
+            ["0", "0"],
             [
               transformationAdapter.interface.encodeFunctionData(
                 "wrapNativeToken",
                 [
                   100, // amount
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "returnERC20",
+                [
+                  testWETH.address, // token
                 ]
               ),
             ],
@@ -240,12 +247,18 @@ describe("[SHOYU] Tests", function () {
 
         await expect(
           shoyuContract.cook(
-            ["0"],
+            ["0", "0"],
             [
               transformationAdapter.interface.encodeFunctionData(
                 "wrapNativeToken",
                 [
                   100, // amount
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "returnERC20",
+                [
+                  testWETH.address, // token
                 ]
               ),
             ],
@@ -260,14 +273,23 @@ describe("[SHOYU] Tests", function () {
     });
 
     describe("[SEAPORT + CONDUIT + TRANSFORM]", async () => {
+      let testWETHERC20Pool: Contract;
       beforeEach(async () => {
-        await seedSushiswapPools({
+        [testWETHERC20Pool] = await seedSushiswapPools({
           pairs: [
             {
               token0: testWETH,
               token0Amount: parseEther("50"),
               token1: testERC20,
               token1Amount: parseEther("25"),
+              type: "cp",
+            },
+            {
+              token0: testWETH,
+              token0Amount: parseEther("50"),
+              token1: testERC20,
+              token1Amount: parseEther("25"),
+              type: "legacy",
             },
           ],
         });
@@ -277,7 +299,7 @@ describe("[SHOYU] Tests", function () {
         );
       });
 
-      it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH (with conduit)", async () => {
+      it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH w/ conduit & legacy swap", async () => {
         // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
         const nftId = await mintAndApprove721(
           seller,
@@ -305,10 +327,10 @@ describe("[SHOYU] Tests", function () {
 
         await withBalanceChecks([order], 0, null, async () => {
           const tx = shoyuContract.connect(buyer).cook(
-            [0, 1],
+            [0, 0, 1],
             [
               transformationAdapter.interface.encodeFunctionData(
-                "swapExactOut",
+                "legacySwapExactOut",
                 [
                   value, // amountOut
                   MaxUint256, // amountInMax
@@ -316,7 +338,13 @@ describe("[SHOYU] Tests", function () {
                   shoyuContract.address, // to
                   TokenSource.CONDUIT, // tokenSource
                   conduitKeyOne, // transferData
-                  true, // unwrapNativeToken
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
                 ]
               ),
               seaportAdapter.interface.encodeFunctionData("fulfill", [
@@ -330,6 +358,7 @@ describe("[SHOYU] Tests", function () {
               ]),
             ]
           );
+
           const receipt = await (await tx).wait();
 
           await checkExpectedEvents(tx, receipt, [
@@ -343,7 +372,220 @@ describe("[SHOYU] Tests", function () {
         });
       });
 
-      it("User accepts offer on ERC721 and swaps ERC20 -> ETH (with conduit)", async () => {
+      it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH w/ conduit & trident swap", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(buyer, conduitOne.address, parseEther("5"));
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.CONDUIT, // tokenSource
+                  conduitKeyOne, // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> ETH w/ conduit & legacy swap", async () => {
+        const nftId = await mintAndApprove721(seller, conduitOne.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // seller swaps ERC20 for ETH and fills the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.CONDUIT,
+                  conduitKeyOne,
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactIn",
+                [
+                  0, // amountIn
+                  BigNumber.from(0), // amountOutMin
+                  [testERC20.address, testWETH.address], // path
+                  seller.address, // to
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .map((event: any) => {
+              try {
+                return legacyPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+              } catch (e) {
+                return null;
+              }
+            })
+            .filter((event: any) => !!event)[0];
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amount1Out)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> ETH w/ conduit & trident swap", async () => {
         const nftId = await mintAndApprove721(seller, conduitOne.address);
 
         await mintAndApproveERC20(
@@ -376,7 +618,7 @@ describe("[SHOYU] Tests", function () {
 
         await withBalanceChecks([order], 0, null, async () => {
           const tx = shoyuContract.connect(seller).cook(
-            [0, 1, 0],
+            [0, 1, 0, 0],
             [
               transformationAdapter.interface.encodeFunctionData(
                 "transferERC721From",
@@ -402,13 +644,30 @@ describe("[SHOYU] Tests", function () {
                 ]
               ),
               transformationAdapter.interface.encodeFunctionData(
-                "swapExactIn",
+                "tridentSwapExactIn",
                 [
-                  parseEther("1"), // amountIn
-                  BigNumber.from(0), // amountOutMin
-                  [testERC20.address, testWETH.address], // path
+                  {
+                    tokenIn: testERC20.address,
+                    amountIn: 0,
+                    amountOutMinimum: BigNumber.from(0),
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
                   seller.address, // to
-                  true, // unwrapNativeToken
                 ]
               ),
             ]
@@ -416,20 +675,19 @@ describe("[SHOYU] Tests", function () {
 
           const receipt = await (await tx).wait();
 
-          const lpInterface = new Interface(IUNISWAPV2_ABI);
-
           const swapEvent = receipt.events
-            .filter((event: any) => {
+            .map((event: any) => {
               try {
-                lpInterface.decodeEventLog("Swap", event.data, event.topics);
-                return true;
+                return tridentPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
               } catch (e) {
-                return false;
+                return null;
               }
             })
-            .map((event: any) =>
-              lpInterface.decodeEventLog("Swap", event.data, event.topics)
-            )[0];
+            .filter((event: any) => !!event)[0];
 
           const sellerETHBalanceAfter = await provider.getBalance(
             seller.address
@@ -440,7 +698,7 @@ describe("[SHOYU] Tests", function () {
           ).to.eq(
             receipt.effectiveGasPrice
               .mul(receipt.gasUsed)
-              .sub(swapEvent.amount0Out)
+              .sub(swapEvent.amountOut)
               .abs()
               .toString()
           );
@@ -468,7 +726,7 @@ describe("[SHOYU] Tests", function () {
         });
       });
 
-      it("User accepts offer on ERC1155 and swaps ERC20 -> ETH (with conduit)", async () => {
+      it("User accepts offer on ERC1155 and swaps ERC20 -> ETH w/ conduit & legacy swap", async () => {
         const { nftId, amount } = await mintAndApprove1155(
           seller,
           conduitOne.address
@@ -504,7 +762,7 @@ describe("[SHOYU] Tests", function () {
 
         await withBalanceChecks([order], 0, null, async () => {
           const tx = shoyuContract.connect(seller).cook(
-            [0, 1, 0],
+            [0, 1, 0, 0],
             [
               transformationAdapter.interface.encodeFunctionData(
                 "transferERC1155From",
@@ -531,13 +789,19 @@ describe("[SHOYU] Tests", function () {
                 ]
               ),
               transformationAdapter.interface.encodeFunctionData(
-                "swapExactIn",
+                "legacySwapExactIn",
                 [
-                  parseEther("1"), // amountIn
+                  0, // amountIn
                   BigNumber.from(0), // amountOutMin
                   [testERC20.address, testWETH.address], // path
                   seller.address, // to
-                  true, // unwrapNativeToken
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
                 ]
               ),
             ]
@@ -545,20 +809,19 @@ describe("[SHOYU] Tests", function () {
 
           const receipt = await (await tx).wait();
 
-          const lpInterface = new Interface(IUNISWAPV2_ABI);
-
           const swapEvent = receipt.events
-            .filter((event: any) => {
+            .map((event: any) => {
               try {
-                lpInterface.decodeEventLog("Swap", event.data, event.topics);
-                return true;
+                return legacyPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
               } catch (e) {
-                return false;
+                return null;
               }
             })
-            .map((event: any) =>
-              lpInterface.decodeEventLog("Swap", event.data, event.topics)
-            )[0];
+            .filter((event: any) => !!event)[0];
 
           const sellerETHBalanceAfter = await provider.getBalance(
             seller.address
@@ -569,7 +832,153 @@ describe("[SHOYU] Tests", function () {
           ).to.eq(
             receipt.effectiveGasPrice
               .mul(receipt.gasUsed)
-              .sub(swapEvent.amount0Out)
+              .sub(swapEvent.amount1Out)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+                operator: marketplaceContract.address,
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC1155 and swaps ERC20 -> ETH w/ conduit & trident swap", async () => {
+        const { nftId, amount } = await mintAndApprove1155(
+          seller,
+          conduitOne.address
+        );
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem1155(nftId, amount, amount, undefined, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC1155From",
+                [
+                  testERC1155.address,
+                  shoyuContract.address,
+                  nftId,
+                  amount,
+                  TokenSource.CONDUIT,
+                  conduitKeyOne,
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC1155.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactIn",
+                [
+                  {
+                    tokenIn: testERC20.address,
+                    amountIn: 0,
+                    amountOutMinimum: BigNumber.from(0),
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .map((event: any) => {
+              try {
+                return tridentPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+              } catch (e) {
+                return null;
+              }
+            })
+            .filter((event: any) => !!event)[0];
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amountOut)
               .abs()
               .toString()
           );

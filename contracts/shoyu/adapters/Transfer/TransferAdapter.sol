@@ -7,6 +7,9 @@ import "@rari-capital/solmate/src/tokens/ERC1155.sol";
 import "./ConduitAdapter.sol";
 import { TokenSource } from "../../lib/LibShoyu.sol";
 
+/// @title TransferAdapter
+/// @notice This adapter serves two purposes - transferring remaining assets from the Shoyu contract (see `returnXXX`),
+/// and transferring assets from `msg.sender` with approvals being sourced from the Shoyu contract or Shoyu's Seaport Conduit.
 contract TransferAdapter is ConduitAdapter {
     constructor(address _conduitController) ConduitAdapter(_conduitController) {}
 

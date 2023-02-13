@@ -126,5 +126,8 @@
     "artifacts",
     "cache",
     "coverage"
-  ]
+  ],
+  "dependencies": {
+    "@sushiswap/trident": "^1.0.0-canary.53"
+  }
 }

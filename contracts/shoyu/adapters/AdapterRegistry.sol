@@ -2,8 +2,14 @@
 pragma solidity >=0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import { Adapter } from "./LibShoyu.sol";
+import { Adapter } from "../lib/LibShoyu.sol";
 
+/// @title AdapterRegistry
+/// @notice Registry of adapter contracts that can be invoked by the Shoyu contract. Only the
+/// contract owner can update the registry.
+/// @dev Any exposed function in an adapter contract should be marked as payable, even if the function
+/// does not strictly require it. Since the Shoyu contract can receive ETH at any point during `cook`,
+/// it is possible for `msg.value` to be greater than 0, causing a non-payable function to revert.
 contract AdapterRegistry is Ownable {
     Adapter[] public adapters;
 

@@ -2,7 +2,6 @@ import { Contract, Wallet } from "ethers";
 import { ethers, network } from "hardhat";
 import { parseEther } from "ethers/lib/utils";
 
-import { seedSushiswapPools } from "./utils/fixtures/sushi";
 import { faucet } from "./utils/impersonate";
 import { seaportFixture } from "./utils/fixtures";
 import { randomHex, toKey } from "./utils/encoding";
@@ -19,7 +18,6 @@ describe("[CONDUIT] Tests", function () {
   let marketplaceContract: Contract;
   let testERC20: Contract;
   let testERC721: Contract;
-  let testWETH: Contract;
   let owner: Wallet;
   let withBalanceChecks: any;
   let conduitController: any;
@@ -68,7 +66,7 @@ describe("[CONDUIT] Tests", function () {
       checkExpectedEvents,
     } = await seaportFixture(owner));
 
-    ({ shoyuContract, testWETH, transformationAdapter, seaportAdapter } =
+    ({ shoyuContract, transformationAdapter, seaportAdapter } =
       await shoyuFixture(
         owner,
         marketplaceContract,
@@ -83,17 +81,6 @@ describe("[CONDUIT] Tests", function () {
 
   describe("[SEAPORT + CONDUIT]", async () => {
     beforeEach(async () => {
-      await seedSushiswapPools({
-        pairs: [
-          {
-            token0: testWETH,
-            token0Amount: parseEther("50"),
-            token1: testERC20,
-            token1Amount: parseEther("25"),
-          },
-        ],
-      });
-
       await Promise.all(
         [seller, buyer].map((wallet) => faucet(wallet.address, provider))
       );

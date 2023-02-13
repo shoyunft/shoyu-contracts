@@ -11,8 +11,10 @@ Currently the `AdapterRegistry` contains 2 entries:
    - Composed of multiple Adapters
      - `TransferAdapter`
        - Includes functions to transfer tokens from the caller's wallet or from Shoyu contract. Users can utilize Shoyu's Seaport Conduit when transferring assets from their wallet.
-     - `LegacySwapAdapter`
-       - Swaps ERC20s via Sushiswap legacy pools.
+     - `SushiAdapter`
+       - Swaps ERC20s via Sushiswap trident & legacy pools.
+     - `WETHAdapter`
+       - Wrap/unwrap native tokens.
 2. `SeaportAdapter`
    - Fulfills a single or multiple orders on Seaport.
 
@@ -20,16 +22,6 @@ Example use cases:
 
 - Purchase one or many listed NFTs with combination of ETH & ERC20s
 - Accept one or many offers on NFTs and receive any ERC20/ETH
-
-When more marketplaces are supported, it will be possible to trade across multiple markets in a single transaction. For example,
-
-- NFT AMM has floor price at 1.5ETH
-- Seaport order has item listed for 1.0 ETH
-- User could buy the item on Seaport and sell it to AMM, while taking profits in a single transaction.
-
-## Install
-
-To install dependencies and compile contracts:
 
 ```bash
 git clone https://github.com/shoyunft/shoyu-contracts && cd shoyu-contracts

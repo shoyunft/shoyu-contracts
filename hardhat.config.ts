@@ -46,7 +46,9 @@ const config: HardhatUserConfig = {
       "Shoyu",
       "AdapterRegistry",
       "SeaportAdapter",
-      "TransformationAdapter",
+      "WETHAdapter",
+      "LegacySwapAdapter",
+      "TridentSwapAdapter",
     ],
     clear: true,
     flat: true,
@@ -75,7 +77,7 @@ const config: HardhatUserConfig = {
       },
     ],
     overrides: {
-      "contracts/conduit/Conduit.sol": {
+      "contracts/seaport/conduit/Conduit.sol": {
         version: "0.8.14",
         settings: {
           viaIR: true,
@@ -85,7 +87,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-      "contracts/conduit/ConduitController.sol": {
+      "contracts/seaport/conduit/ConduitController.sol": {
         version: "0.8.14",
         settings: {
           viaIR: true,

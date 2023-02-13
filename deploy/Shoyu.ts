@@ -1,4 +1,5 @@
 import {
+  BENTOBOX_ADDRESS,
   FACTORY_ADDRESS,
   INIT_CODE_HASH,
   WNATIVE_ADDRESS,
@@ -25,7 +26,12 @@ const deployFunction: DeployFunction = async function ({
 
   const chainId = Number(await getChainId());
 
-  let wethAddress, pairCodeHash, sushiswapFactory, seaport;
+  let wethAddress,
+    pairCodeHash,
+    sushiswapFactory,
+    seaport,
+    bentoBox,
+    conduitController;
 
   if (chainId === 31337) {
     wethAddress = (await deployments.get("TestWETH")).address;
@@ -60,12 +66,22 @@ const deployFunction: DeployFunction = async function ({
     seaport = await deployments.get("Seaport");
   }
 
+  if (chainId in BENTOBOX_ADDRESS) {
+    bentoBox = await ethers.getContractAt(
+      "BentoBoxV1",
+      BENTOBOX_ADDRESS[chainId]
+    );
+  } else {
+    bentoBox = await deployments.get("BentoBoxV1");
+  }
+
   const transformationAdapter = await deploy("TransformationAdapter", {
     from: deployer,
     args: [
       wethAddress,
       sushiswapFactory.address,
       pairCodeHash,
+      bentoBox.address,
       CONDUIT_CONTROLLER_ADDRESS[chainId],
     ],
     log: true,

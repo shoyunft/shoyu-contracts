@@ -5,6 +5,7 @@ import { expect } from "chai";
 import { Interface, parseEther } from "ethers/lib/utils";
 
 import IUNISWAPV2_ABI from "@sushiswap/core/build/abi/IUniswapV2Pair.json";
+import IPOOL from "@sushiswap/trident/artifacts/contracts/interfaces/IPool.sol/IPool.json";
 
 import { seedSushiswapPools } from "./utils/fixtures/sushi";
 import { faucet } from "./utils/impersonate";
@@ -21,6 +22,7 @@ import {
   encodeFulfillAdvancedOrderParams,
   encodeFulfillAvailableAdvancedOrdersParams,
 } from "./utils/helpers";
+import { encodedSwapData } from "./utils/trident";
 
 describe("[TRANFORMATION] Tests", function () {
   const provider = ethers.provider;
@@ -46,7 +48,9 @@ describe("[TRANFORMATION] Tests", function () {
   let checkExpectedEvents: any;
   let seller: Wallet;
   let buyer: Wallet;
-  let lpInterface: Interface;
+
+  const tridentPoolInterface = new Interface(IPOOL.abi);
+  const legacyPoolInterface = new Interface(IUNISWAPV2_ABI);
 
   after(async () => {
     await network.provider.request({
@@ -59,8 +63,6 @@ describe("[TRANFORMATION] Tests", function () {
     seller = new ethers.Wallet(randomHex(32), provider);
     buyer = new ethers.Wallet(randomHex(32), provider);
     zone = new ethers.Wallet(randomHex(32), provider);
-
-    lpInterface = new Interface(IUNISWAPV2_ABI);
 
     await Promise.all(
       [owner, seller, buyer, zone].map((wallet) =>
@@ -95,1753 +97,3198 @@ describe("[TRANFORMATION] Tests", function () {
   });
 
   describe("[SEAPORT + TRANSFORM]", async () => {
-    beforeEach(async () => {
-      await seedSushiswapPools({
-        pairs: [
-          {
-            token0: testWETH,
-            token0Amount: parseEther("50"),
-            token1: testERC20,
-            token1Amount: parseEther("25"),
-          },
-        ],
-      });
-
-      await Promise.all(
-        [seller, buyer].map((wallet) => faucet(wallet.address, provider))
-      );
-    });
-
-    it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value, // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ]
+    describe("[WETH ADAPTER]", async () => {
+      it("User buys ERC721 listed in ETH by unwrapping WETH -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
-        const receipt = await (await tx).wait();
 
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
+        const offer = [getTestItem721(nftId)];
 
-    it("User buys ERC721 listed in ERC20 by swapping WETH -> ERC20", async () => {
-      // seller creates listing for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      await testWETH.connect(buyer).deposit({ value: parseEther("5") });
-      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getTestItem20(parseEther("1"), parseEther("1"), seller.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      const erc20Amount = parseEther("1.1");
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              erc20Amount, // amountOut
-              MaxUint256, // amountInMax
-              [testWETH.address, testERC20.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              false, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              0,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ]
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
         );
-        const receipt = await (await tx).wait();
 
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+        // buyer fills order through Shoyu contract
+        // and unwraps WETH for ETH before filling the order
+        await testWETH.connect(buyer).deposit({ value });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC20From",
+                [
+                  testWETH.address, // token
+                  shoyuContract.address, // to
+                  value, // amount
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
               fulfiller: buyer.address,
             },
-          ],
-          [
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ETH by paying with WETH & ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and unwraps WETH for ETH before filling the order
+        await testWETH.connect(buyer).deposit({ value });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
+
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC20From",
+                [
+                  testWETH.address, // token
+                  shoyuContract.address, // to
+                  value.div(2), // amount
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
             {
-              item: { ...consideration[0], amount: parseEther("1") },
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
-        );
+              value: value.div(2),
+            }
+          );
+          const receipt = await (await tx).wait();
 
-        return receipt;
-      });
-    });
-
-    it("User buys ERC721 listed in ETH by unwrapping WETH -> ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and unwraps WETH for ETH before filling the order
-      await testWETH.connect(buyer).deposit({ value });
-      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC20From",
-              [
-                testWETH.address, // token
-                shoyuContract.address, // to
-                value, // amount
-                TokenSource.WALLET, // tokenSource
-                "0x", // transferData
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData(
-              "unwrapNativeToken",
-              [
-                value, // amount
-                shoyuContract.address, // to
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ]
-        );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User buys ERC721 listed in ETH by paying with WETH & ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and unwraps WETH for ETH before filling the order
-      await testWETH.connect(buyer).deposit({ value });
-      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
-
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC20From",
-              [
-                testWETH.address, // token
-                shoyuContract.address, // to
-                value.div(2), // amount
-                TokenSource.WALLET, // tokenSource
-                "0x", // transferData
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData(
-              "unwrapNativeToken",
-              [
-                value.div(2), // amount
-                shoyuContract.address, // to
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ],
-          {
-            value: value.div(2),
-          }
-        );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User buys ERC721 listed in ETH by paying with ERC20 & ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value.div(2), // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ],
-          {
-            value: value.div(2),
-          }
-        );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User buys ERC721 listed in ETH by paying with WETH, ERC20, & ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and unwraps WETH for ETH before filling the order
-      await testWETH.connect(buyer).deposit({ value });
-      await testWETH.connect(buyer).approve(shoyuContract.address, MaxUint256);
-
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 0, 0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC20From",
-              [
-                testWETH.address, // token
-                shoyuContract.address, // to
-                parseEther("0.5"), // amount
-                TokenSource.WALLET, // tokenSource
-                "0x", // transferData
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData(
-              "unwrapNativeToken",
-              [
-                parseEther("0.5"), // amount
-                shoyuContract.address, // to
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              parseEther("0.5"), // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ],
-          {
-            value: parseEther("0.1"),
-          }
-        );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User buys ERC721 listed in WETH by wrapping ETH -> WETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1WETH + .1WETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const offer = [getTestItem721(nftId)];
-
-      const consideration = [
-        getTestItem20(
-          parseEther("1"),
-          parseEther("1"),
-          seller.address,
-          testWETH.address
-        ),
-        getTestItem20(
-          parseEther(".1"),
-          parseEther(".1"),
-          zone.address,
-          testWETH.address
-        ),
-      ];
-
-      const { order, orderHash } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      const value = parseEther("1.1");
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "wrapNativeToken",
-              [
-                value, // amount
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              0,
-              encodeFulfillAdvancedOrderParams(
-                order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ],
-          {
-            value,
-          }
-        );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
               fulfiller: buyer.address,
             },
-          ],
-          [
-            {
-              item: { ...consideration[0], amount: parseEther("1") },
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in WETH by wrapping ETH -> WETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1WETH + .1WETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        return receipt;
-      });
-    });
+        const offer = [getTestItem721(nftId)];
 
-    it("User buys single listed bundle of ERC721+ERC1155 by swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
-      const erc721Id = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+        const consideration = [
+          getTestItem20(
+            parseEther("1"),
+            parseEther("1"),
+            seller.address,
+            testWETH.address
+          ),
+          getTestItem20(
+            parseEther(".1"),
+            parseEther(".1"),
+            zone.address,
+            testWETH.address
+          ),
+        ];
 
-      const { nftId: erc1155Id, amount: erc1155Amount } =
-        await mintAndApprove1155(seller, marketplaceContract.address, 1);
+        const { order, orderHash } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      const offer = [
-        getTestItem721(erc721Id),
-        getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
-      ];
+        const value = parseEther("1.1");
 
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value, // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "wrapNativeToken",
+                [
+                  value, // amount
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                0,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
+            {
               value,
-              encodeFulfillAdvancedOrderParams(
+            }
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
                 order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
-          ]
-        );
-        const receipt = await (await tx).wait();
+                orderHash,
+                fulfiller: buyer.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount: parseEther("1") },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
 
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
+          return receipt;
+        });
       });
-    });
 
-    it("User buys listed ERC721 with ETH and swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+      it("User accepts offer on ERC721 for WETH and unwraps to ETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
 
-      const offer = [getTestItem721(nftId)];
+        await testWETH.connect(buyer).deposit({ value: parseEther("2") });
+        await testWETH
+          .connect(buyer)
+          .approve(marketplaceContract.address, MaxUint256);
 
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [
+          getTestItem20(
+            parseEther("1.1"),
+            parseEther("1.1"),
+            undefined,
+            testWETH.address
+          ),
+        ];
 
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(
+            parseEther(".1"),
+            parseEther(".1"),
+            zone.address,
+            testWETH.address
+          ),
+        ];
 
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value.div(2), // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  parseEther("1"), // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(parseEther("1"))
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
                 order,
-                [],
-                toKey(false),
-                buyer.address
-              ),
-            ]),
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+    });
+
+    describe("[LEGACY SWAP]", async () => {
+      beforeEach(async () => {
+        await seedSushiswapPools({
+          pairs: [
+            {
+              token0: testWETH,
+              token0Amount: parseEther("50"),
+              token1: testERC20,
+              token1Amount: parseEther("25"),
+              type: "legacy",
+            },
           ],
-          {
-            value: value.div(2),
-          }
+        });
+
+        await Promise.all(
+          [seller, buyer].map((wallet) => faucet(wallet.address, provider))
         );
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
       });
-    });
 
-    it("User batch buys ERC721+ERC1155 in seperate listings by swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
-      const erc721Id = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+      it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
 
-      const { nftId: erc1155Id, amount: erc1155Amount } =
-        await mintAndApprove1155(seller, marketplaceContract.address, 1);
+        const offer = [getTestItem721(nftId)];
 
-      // order0: 1 ERC721 for 1ETH+.1ETH Fee
-      const offer0 = [getTestItem721(erc721Id)];
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      const consideration0 = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      const {
-        order: order0,
-        orderHash: orderHash0,
-        value: value0,
-      } = await createOrder(
-        seller,
-        zone,
-        offer0,
-        consideration0,
-        0 // FULL_OPEN
-      );
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
 
-      // order1: 1 ERC1155 for 1ETH+.1ETH Fee
-      const offer1 = [getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount)];
-
-      const consideration1 = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const {
-        order: order1,
-        orderHash: orderHash1,
-        value: value1,
-      } = await createOrder(
-        seller,
-        zone,
-        offer1,
-        consideration1,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      const offerComponents = [[[0, 0]], [[1, 0]]].map(toFulfillmentComponents);
-
-      const considerationComponents = [
-        [
-          [0, 0],
-          [1, 0],
-        ],
-        [
-          [0, 1],
-          [1, 1],
-        ],
-      ].map(toFulfillmentComponents);
-
-      const totalValue = value0.add(value1);
-
-      await withBalanceChecks([order0, order1], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              totalValue, // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
-              totalValue,
-              encodeFulfillAvailableAdvancedOrdersParams(
-                [order0, order1],
-                [],
-                offerComponents,
-                considerationComponents,
-                toKey(false),
-                buyer.address,
-                2
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
               ),
-              true,
-            ]),
-          ]
-        );
-
-        const receipt = await (await tx).wait();
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order: order0,
-            orderHash: orderHash0,
-            fulfiller: buyer.address,
-            receipt: buyer.address,
-          },
-          {
-            order: order1,
-            orderHash: orderHash1,
-            fulfiller: buyer.address,
-            receipt: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User batch buys ERC721+ERC1155 in seperate listings with ETH and swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
-      const erc721Id = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
-
-      const { nftId: erc1155Id, amount: erc1155Amount } =
-        await mintAndApprove1155(seller, marketplaceContract.address, 1);
-
-      // order0: 1 ERC721 for 1ETH+.1ETH Fee
-      const offer0 = [getTestItem721(erc721Id)];
-
-      const consideration0 = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const {
-        order: order0,
-        orderHash: orderHash0,
-        value: value0,
-      } = await createOrder(
-        seller,
-        zone,
-        offer0,
-        consideration0,
-        0 // FULL_OPEN
-      );
-
-      // order1: 1 ERC1155 for 1ETH+.1ETH Fee
-      const offer1 = [getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount)];
-
-      const consideration1 = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const {
-        order: order1,
-        orderHash: orderHash1,
-        value: value1,
-      } = await createOrder(
-        seller,
-        zone,
-        offer1,
-        consideration1,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      const offerComponents = [[[0, 0]], [[1, 0]]].map(toFulfillmentComponents);
-
-      const considerationComponents = [
-        [
-          [0, 0],
-          [1, 0],
-        ],
-        [
-          [0, 1],
-          [1, 1],
-        ],
-      ].map(toFulfillmentComponents);
-
-      const totalValue = value0.add(value1);
-
-      await withBalanceChecks([order0, order1], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              totalValue.div(2), // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
-              totalValue,
-              encodeFulfillAvailableAdvancedOrdersParams(
-                [order0, order1],
-                [],
-                offerComponents,
-                considerationComponents,
-                toKey(false),
-                buyer.address,
-                2
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
               ),
-              true,
-            ]),
-          ],
-          {
-            value: totalValue.div(2),
-          }
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ERC20 by swapping WETH -> ERC20", async () => {
+        // seller creates listing for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        const receipt = await (await tx).wait();
+        await testWETH.connect(buyer).deposit({ value: parseEther("5") });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
 
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order: order0,
-            orderHash: orderHash0,
-            fulfiller: buyer.address,
-            receipt: buyer.address,
-          },
-          {
-            order: order1,
-            orderHash: orderHash1,
-            fulfiller: buyer.address,
-            receipt: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
+        const offer = [getTestItem721(nftId)];
 
-    it("Excess ETH is refunded when buying listed ERC721 by swapping ERC20 -> ETH", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+        const consideration = [
+          getTestItem20(parseEther("1"), parseEther("1"), seller.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      const offer = [getTestItem721(nftId)];
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        const erc20Amount = parseEther("1.1");
 
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  erc20Amount, // amountOut
+                  MaxUint256, // amountInMax
+                  [testWETH.address, testERC20.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                0,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
 
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      const buyerETHBalanceBefore = await provider.getBalance(buyer.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value.add(42069), // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
                 order,
-                [],
-                toKey(false),
-                buyer.address
+                orderHash,
+                fulfiller: buyer.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount: parseEther("1") },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ETH by paying with ERC20 & ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value.div(2), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
               ),
-            ]),
-          ]
-        );
-
-        const receipt = await (await tx).wait();
-
-        const buyerETHBalanceAfter = await provider.getBalance(buyer.address);
-
-        expect(
-          buyerETHBalanceAfter.sub(buyerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice.mul(receipt.gasUsed).sub(42069).toString()
-        );
-
-        await checkExpectedEvents(tx, receipt, [
-          {
-            order,
-            orderHash,
-            fulfiller: buyer.address,
-          },
-        ]);
-        return receipt;
-      });
-    });
-
-    it("User accepts offer on ERC721 and swaps ERC20 -> ETH using swapExactIn", async () => {
-      const nftId = await mintAndApprove721(seller, shoyuContract.address);
-
-      await mintAndApproveERC20(
-        buyer,
-        marketplaceContract.address,
-        parseEther("5")
-      );
-
-      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
-
-      const consideration = [
-        getTestItem721(nftId, 1, 1, buyer.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerETHBalanceBefore = await provider.getBalance(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC721From",
-              [
-                testERC721.address,
-                shoyuContract.address,
-                nftId,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC721.address],
-                0,
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
                 encodeFulfillAdvancedOrderParams(
                   order,
                   [],
                   toKey(false),
-                  shoyuContract.address
+                  buyer.address
                 ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapExactIn", [
-              parseEther("1"), // amountIn
-              BigNumber.from(0), // amountOutMin
-              [testERC20.address, testWETH.address], // path
-              seller.address, // to
-              true, // unwrapNativeToken
-            ]),
-          ]
-        );
-
-        const receipt = await (await tx).wait();
-
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
+              ]),
+            ],
+            {
+              value: value.div(2),
             }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
+          );
+          const receipt = await (await tx).wait();
 
-        const ethOut = swapEvent.amount0Out.eq(0)
-          ? swapEvent.amount1Out
-          : swapEvent.amount0Out;
-
-        const sellerETHBalanceAfter = await provider.getBalance(seller.address);
-
-        expect(
-          sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice
-            .mul(receipt.gasUsed)
-            .sub(ethOut)
-            .abs()
-            .toString()
-        );
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
-              fulfiller: shoyuContract.address,
+              fulfiller: buyer.address,
             },
-          ],
-          [
-            {
-              item: consideration[0],
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ETH by paying with WETH, ERC20, & ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        return receipt;
-      });
-    });
+        const offer = [getTestItem721(nftId)];
 
-    it("User accepts offer on ERC721 and swaps ERC20 -> ETH using swapMaxIn", async () => {
-      const nftId = await mintAndApprove721(seller, shoyuContract.address);
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      await mintAndApproveERC20(
-        buyer,
-        marketplaceContract.address,
-        parseEther("5")
-      );
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+        // buyer fills order through Shoyu contract
+        // and unwraps WETH for ETH before filling the order
+        await testWETH.connect(buyer).deposit({ value });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
 
-      const consideration = [
-        getTestItem721(nftId, 1, 1, buyer.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
 
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerETHBalanceBefore = await provider.getBalance(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC721From",
-              [
-                testERC721.address,
-                shoyuContract.address,
-                nftId,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC721.address],
-                0,
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC20From",
+                [
+                  testWETH.address, // token
+                  shoyuContract.address, // to
+                  parseEther("0.5"), // amount
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  parseEther("0.5"), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  parseEther("1"), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
                 encodeFulfillAdvancedOrderParams(
                   order,
                   [],
                   toKey(false),
-                  shoyuContract.address
+                  buyer.address
                 ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapMaxIn", [
-              BigNumber.from(0), // amountOutMin
-              [testERC20.address, testWETH.address], // path
-              seller.address, // to
-              true, // unwrapNativeToken
-            ]),
-          ]
-        );
-
-        const receipt = await (await tx).wait();
-
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
+              ]),
+            ],
+            {
+              value: parseEther("0.1"),
             }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
+          );
+          const receipt = await (await tx).wait();
 
-        const ethOut = swapEvent.amount0Out.eq(0)
-          ? swapEvent.amount1Out
-          : swapEvent.amount0Out;
-
-        const sellerETHBalanceAfter = await provider.getBalance(seller.address);
-
-        expect(
-          sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice
-            .mul(receipt.gasUsed)
-            .sub(ethOut)
-            .abs()
-            .toString()
-        );
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
-              fulfiller: shoyuContract.address,
+              fulfiller: buyer.address,
             },
-          ],
-          [
-            {
-              item: consideration[0],
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys single listed bundle of ERC721+ERC1155 by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        return receipt;
-      });
-    });
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
 
-    it("User accepts offer on ERC721 and swaps ERC20 -> WETH using swapExactIn", async () => {
-      const nftId = await mintAndApprove721(seller, shoyuContract.address);
+        const offer = [
+          getTestItem721(erc721Id),
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
 
-      await mintAndApproveERC20(
-        buyer,
-        marketplaceContract.address,
-        parseEther("5")
-      );
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      const consideration = [
-        getTestItem721(nftId, 1, 1, buyer.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
 
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerWETHBalanceBefore = await testWETH.balanceOf(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC721From",
-              [
-                testERC721.address,
-                shoyuContract.address,
-                nftId,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC721.address],
-                0,
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
                 encodeFulfillAdvancedOrderParams(
                   order,
                   [],
                   toKey(false),
-                  shoyuContract.address
+                  buyer.address
                 ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapExactIn", [
-              parseEther("1"), // amountIn
-              BigNumber.from(0), // amountOutMin
-              [testERC20.address, testWETH.address], // path
-              seller.address, // to
-              false, // unwrapNativeToken
-            ]),
-          ]
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys listed ERC721 with ETH and swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        const receipt = await (await tx).wait();
+        const offer = [getTestItem721(nftId)];
 
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value.div(2), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
+            {
+              value: value.div(2),
             }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
+          );
+          const receipt = await (await tx).wait();
 
-        const ethOut = swapEvent.amount0Out.eq(0)
-          ? swapEvent.amount1Out
-          : swapEvent.amount0Out;
-
-        const sellerWETHBalanceAfter = await testWETH.balanceOf(seller.address);
-
-        expect(
-          sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
-        ).to.eq(ethOut.toString());
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
-              fulfiller: shoyuContract.address,
+              fulfiller: buyer.address,
             },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User batch buys ERC721+ERC1155 in seperate listings by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
+
+        // order0: 1 ERC721 for 1ETH+.1ETH Fee
+        const offer0 = [getTestItem721(erc721Id)];
+
+        const consideration0 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order0,
+          orderHash: orderHash0,
+          value: value0,
+        } = await createOrder(
+          seller,
+          zone,
+          offer0,
+          consideration0,
+          0 // FULL_OPEN
+        );
+
+        // order1: 1 ERC1155 for 1ETH+.1ETH Fee
+        const offer1 = [
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
+
+        const consideration1 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order1,
+          orderHash: orderHash1,
+          value: value1,
+        } = await createOrder(
+          seller,
+          zone,
+          offer1,
+          consideration1,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        const offerComponents = [[[0, 0]], [[1, 0]]].map(
+          toFulfillmentComponents
+        );
+
+        const considerationComponents = [
+          [
+            [0, 0],
+            [1, 0],
           ],
           [
-            {
-              item: consideration[0],
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
-        );
+            [0, 1],
+            [1, 1],
+          ],
+        ].map(toFulfillmentComponents);
 
-        return receipt;
-      });
-    });
+        const totalValue = value0.add(value1);
 
-    it("User accepts offer on ERC721 and swaps ERC20 -> WETH using swapMaxIn", async () => {
-      const nftId = await mintAndApprove721(seller, shoyuContract.address);
-
-      await mintAndApproveERC20(
-        buyer,
-        marketplaceContract.address,
-        parseEther("5")
-      );
-
-      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
-
-      const consideration = [
-        getTestItem721(nftId, 1, 1, buyer.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
-
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerWETHBalanceBefore = await testWETH.balanceOf(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC721From",
-              [
-                testERC721.address,
-                shoyuContract.address,
-                nftId,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC721.address],
-                0,
-                encodeFulfillAdvancedOrderParams(
-                  order,
+        await withBalanceChecks([order0, order1], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  totalValue, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  totalValue, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
+                totalValue,
+                encodeFulfillAvailableAdvancedOrdersParams(
+                  [order0, order1],
                   [],
+                  offerComponents,
+                  considerationComponents,
                   toKey(false),
-                  shoyuContract.address
+                  buyer.address,
+                  2
                 ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapMaxIn", [
-              BigNumber.from(0), // amountOutMin
-              [testERC20.address, testWETH.address], // path
-              seller.address, // to
-              false, // unwrapNativeToken
-            ]),
-          ]
+                true,
+              ]),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order: order0,
+              orderHash: orderHash0,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+            {
+              order: order1,
+              orderHash: orderHash1,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User batch buys ERC721+ERC1155 in seperate listings with ETH and swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        const receipt = await (await tx).wait();
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
 
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
+        // order0: 1 ERC721 for 1ETH+.1ETH Fee
+        const offer0 = [getTestItem721(erc721Id)];
+
+        const consideration0 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order0,
+          orderHash: orderHash0,
+          value: value0,
+        } = await createOrder(
+          seller,
+          zone,
+          offer0,
+          consideration0,
+          0 // FULL_OPEN
+        );
+
+        // order1: 1 ERC1155 for 1ETH+.1ETH Fee
+        const offer1 = [
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
+
+        const consideration1 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order1,
+          orderHash: orderHash1,
+          value: value1,
+        } = await createOrder(
+          seller,
+          zone,
+          offer1,
+          consideration1,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        const offerComponents = [[[0, 0]], [[1, 0]]].map(
+          toFulfillmentComponents
+        );
+
+        const considerationComponents = [
+          [
+            [0, 0],
+            [1, 0],
+          ],
+          [
+            [0, 1],
+            [1, 1],
+          ],
+        ].map(toFulfillmentComponents);
+
+        const totalValue = value0.add(value1);
+
+        await withBalanceChecks([order0, order1], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  totalValue.div(2), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  totalValue.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
+                totalValue,
+                encodeFulfillAvailableAdvancedOrdersParams(
+                  [order0, order1],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(false),
+                  buyer.address,
+                  2
+                ),
+                true,
+              ]),
+            ],
+            {
+              value: totalValue.div(2),
             }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
+          );
 
-        const ethOut = swapEvent.amount0Out.eq(0)
-          ? swapEvent.amount1Out
-          : swapEvent.amount0Out;
+          const receipt = await (await tx).wait();
 
-        const sellerWETHBalanceAfter = await testWETH.balanceOf(seller.address);
-
-        expect(
-          sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
-        ).to.eq(ethOut.toString());
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
-              order,
-              orderHash,
-              fulfiller: shoyuContract.address,
+              order: order0,
+              orderHash: orderHash0,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
             },
-          ],
-          [
             {
-              item: consideration[0],
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
+              order: order1,
+              orderHash: orderHash1,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
             },
-          ]
+          ]);
+          return receipt;
+        });
+      });
+
+      it("Excess ETH is refunded when buying listed ERC721 by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
         );
 
-        return receipt;
-      });
-    });
+        const offer = [getTestItem721(nftId)];
 
-    it("User accepts offer on ERC1155 and swaps ERC20 -> ETH", async () => {
-      const { nftId, amount } = await mintAndApprove1155(
-        seller,
-        shoyuContract.address
-      );
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-      await mintAndApproveERC20(
-        buyer,
-        marketplaceContract.address,
-        parseEther("5")
-      );
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
 
-      // buyer creates offer for 1ERC1155 at price of 1ERC20 + .1ERC20 fee
-      const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
 
-      const consideration = [
-        getTestItem1155(nftId, amount, amount, undefined, buyer.address),
-        getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+        const buyerETHBalanceBefore = await provider.getBalance(buyer.address);
 
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerETHBalanceBefore = await provider.getBalance(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC1155From",
-              [
-                testERC1155.address,
-                shoyuContract.address,
-                nftId,
-                amount,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC1155.address],
-                0,
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value.add(42069), // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.add(42069), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
                 encodeFulfillAdvancedOrderParams(
                   order,
                   [],
                   toKey(false),
-                  shoyuContract.address
+                  buyer.address
                 ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData("swapExactIn", [
-              parseEther("1"), // amountIn
-              BigNumber.from(0), // amountOutMin
-              [testERC20.address, testWETH.address], // path
-              seller.address, // to
-              true, // unwrapNativeToken
-            ]),
-          ]
-        );
+              ]),
+            ]
+          );
 
-        const receipt = await (await tx).wait();
+          const receipt = await (await tx).wait();
 
-        const lpInterface = new Interface(IUNISWAPV2_ABI);
+          const buyerETHBalanceAfter = await provider.getBalance(buyer.address);
 
-        const swapEvent = receipt.events
-          .filter((event: any) => {
-            try {
-              lpInterface.decodeEventLog("Swap", event.data, event.topics);
-              return true;
-            } catch (e) {
-              return false;
-            }
-          })
-          .map((event: any) =>
-            lpInterface.decodeEventLog("Swap", event.data, event.topics)
-          )[0];
+          expect(
+            buyerETHBalanceAfter.sub(buyerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice.mul(receipt.gasUsed).sub(42069).toString()
+          );
 
-        const ethOut = swapEvent.amount0Out.eq(0)
-          ? swapEvent.amount1Out
-          : swapEvent.amount0Out;
-
-        const sellerETHBalanceAfter = await provider.getBalance(seller.address);
-
-        expect(
-          sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice
-            .mul(receipt.gasUsed)
-            .sub(ethOut)
-            .abs()
-            .toString()
-        );
-
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
+          await checkExpectedEvents(tx, receipt, [
             {
               order,
               orderHash,
-              fulfiller: shoyuContract.address,
+              fulfiller: buyer.address,
             },
-          ],
-          [
-            {
-              item: { ...consideration[0], amount },
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-              operator: marketplaceContract.address,
-            },
-          ]
-        );
-
-        return receipt;
+          ]);
+          return receipt;
+        });
       });
-    });
 
-    it("User accepts offer on ERC721 for WETH and unwraps to ETH", async () => {
-      const nftId = await mintAndApprove721(seller, shoyuContract.address);
+      it("User accepts offer on ERC721 and swaps ERC20 -> ETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
 
-      await testWETH.connect(buyer).deposit({ value: parseEther("2") });
-      await testWETH
-        .connect(buyer)
-        .approve(marketplaceContract.address, MaxUint256);
-
-      // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
-      const offer = [
-        getTestItem20(
-          parseEther("1.1"),
-          parseEther("1.1"),
-          undefined,
-          testWETH.address
-        ),
-      ];
-
-      const consideration = [
-        getTestItem721(nftId, 1, 1, buyer.address),
-        getTestItem20(
-          parseEther(".1"),
-          parseEther(".1"),
-          zone.address,
-          testWETH.address
-        ),
-      ];
-
-      const { order, orderHash } = await createOrder(
-        buyer,
-        zone,
-        offer,
-        consideration,
-        0 // FULL_OPEN
-      );
-
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      const sellerETHBalanceBefore = await provider.getBalance(seller.address);
-
-      await withBalanceChecks([order], 0, null, async () => {
-        const tx = shoyuContract.connect(seller).cook(
-          [0, 1, 0],
-          [
-            transformationAdapter.interface.encodeFunctionData(
-              "transferERC721From",
-              [
-                testERC721.address,
-                shoyuContract.address,
-                nftId,
-                TokenSource.WALLET,
-                "0x",
-              ]
-            ),
-            seaportAdapter.interface.encodeFunctionData(
-              "approveBeforeFulfill",
-              [
-                [testERC721.address],
-                0,
-                encodeFulfillAdvancedOrderParams(
-                  order,
-                  [],
-                  toKey(false),
-                  shoyuContract.address
-                ),
-              ]
-            ),
-            transformationAdapter.interface.encodeFunctionData(
-              "unwrapNativeToken",
-              [
-                parseEther("1"), // amount
-                seller.address, // to
-              ]
-            ),
-          ]
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
         );
 
-        const receipt = await (await tx).wait();
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
 
-        const sellerETHBalanceAfter = await provider.getBalance(seller.address);
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
 
-        expect(
-          sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
-        ).to.eq(
-          receipt.effectiveGasPrice
-            .mul(receipt.gasUsed)
-            .sub(parseEther("1"))
-            .abs()
-            .toString()
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
         );
 
-        await checkExpectedEvents(
-          tx,
-          receipt,
-          [
-            {
-              order,
-              orderHash,
-              fulfiller: shoyuContract.address,
-            },
-          ],
-          [
-            {
-              item: consideration[0],
-              offerer: shoyuContract.address,
-              conduitKey: toKey(false),
-            },
-          ]
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
         );
 
-        return receipt;
-      });
-    });
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactIn",
+                [
+                  parseEther("1"), // amountIn
+                  BigNumber.from(0), // amountOutMin
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amountIn
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
 
-    it("Reverts if order cannot be filled after swapping", async () => {
-      // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
-      const nftId = await mintAndApprove721(
-        seller,
-        marketplaceContract.address
-      );
+          const receipt = await (await tx).wait();
 
-      const offer = [getTestItem721(nftId)];
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                legacyPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              legacyPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
 
-      const consideration = [
-        getItemETH(parseEther("1"), parseEther("1"), seller.address),
-        getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
-      ];
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
 
-      // order is expired
-      const { order, orderHash, value } = await createOrder(
-        seller,
-        zone,
-        offer,
-        consideration,
-        0, // FULL_OPEN
-        [],
-        "EXPIRED"
-      );
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amount0Out)
+              .abs()
+              .toString()
+          );
 
-      // buyer fills order through Shoyu contract
-      // and swaps ERC20 for ETH before filling the order
-      await mintAndApproveERC20(buyer, shoyuContract.address, parseEther("5"));
-
-      await expect(
-        shoyuContract.connect(buyer).cook(
-          [0, 1],
-          [
-            transformationAdapter.interface.encodeFunctionData("swapExactOut", [
-              value, // amountOut
-              MaxUint256, // amountInMax
-              [testERC20.address, testWETH.address], // path
-              shoyuContract.address, // to
-              TokenSource.WALLET, // tokenSource
-              "0x", // transferData
-              true, // unwrapNativeToken
-            ]),
-            seaportAdapter.interface.encodeFunctionData("fulfill", [
-              value,
-              encodeFulfillAdvancedOrderParams(
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
                 order,
-                [],
-                toKey(false),
-                buyer.address
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> WETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerWETHBalanceBefore = await testWETH.balanceOf(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
               ),
-            ]),
-          ]
-        )
-      ).to.be.reverted;
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactIn",
+                [
+                  parseEther("1"), // amountIn
+                  BigNumber.from(0), // amountOutMin
+                  [testERC20.address, testWETH.address], // path
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                legacyPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              legacyPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          const ethOut = swapEvent.amount0Out.eq(0)
+            ? swapEvent.amount1Out
+            : swapEvent.amount0Out;
+
+          const sellerWETHBalanceAfter = await testWETH.balanceOf(
+            seller.address
+          );
+
+          expect(
+            sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
+          ).to.eq(ethOut.toString());
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC1155 and swaps ERC20 -> ETH", async () => {
+        const { nftId, amount } = await mintAndApprove1155(
+          seller,
+          shoyuContract.address
+        );
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC1155 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem1155(nftId, amount, amount, undefined, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC1155From",
+                [
+                  testERC1155.address,
+                  shoyuContract.address,
+                  nftId,
+                  amount,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC1155.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactIn",
+                [
+                  parseEther("1"), // amountIn
+                  BigNumber.from(0), // amountOutMin
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const legacyPoolInterface = new Interface(IUNISWAPV2_ABI);
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                legacyPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              legacyPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          const ethOut = swapEvent.amount0Out.eq(0)
+            ? swapEvent.amount1Out
+            : swapEvent.amount0Out;
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(ethOut)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+                operator: marketplaceContract.address,
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("Reverts if order cannot be filled after swapping", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        // order is expired
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0, // FULL_OPEN
+          [],
+          "EXPIRED"
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await expect(
+          shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "legacySwapExactOut",
+                [
+                  value, // amountOut
+                  MaxUint256, // amountInMax
+                  [testERC20.address, testWETH.address], // path
+                  shoyuContract.address, // to
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          )
+        ).to.be.reverted;
+      });
+    });
+
+    describe("[TRIDENT SWAP]", async () => {
+      let testWETHERC20Pool: Contract;
+      beforeEach(async () => {
+        [testWETHERC20Pool] = await seedSushiswapPools({
+          pairs: [
+            {
+              token0: testWETH,
+              token0Amount: parseEther("50"),
+              token1: testERC20,
+              token1Amount: parseEther("25"),
+              type: "cp",
+            },
+          ],
+        });
+
+        await Promise.all(
+          [seller, buyer].map((wallet) => faucet(wallet.address, provider))
+        );
+      });
+
+      it("User buys ERC721 listed in ETH by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ERC20 by swapping WETH -> ERC20", async () => {
+        // seller creates listing for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        await testWETH.connect(buyer).deposit({ value: parseEther("5") });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getTestItem20(parseEther("1"), parseEther("1"), seller.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        const erc20Amount = parseEther("1.1");
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testERC20.address,
+                    amountOut: erc20Amount,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testWETH.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                0,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: buyer.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount: parseEther("1") },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ETH by paying with ERC20 & ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value.div(2),
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
+            {
+              value: value.div(2),
+            }
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys ERC721 listed in ETH by paying with WETH, ERC20, & ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and unwraps WETH for ETH before filling the order
+        await testWETH.connect(buyer).deposit({ value });
+        await testWETH
+          .connect(buyer)
+          .approve(shoyuContract.address, MaxUint256);
+
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC20From",
+                [
+                  testWETH.address, // token
+                  shoyuContract.address, // to
+                  parseEther("0.5"), // amount
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: parseEther("0.5"),
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  parseEther("1"), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
+            {
+              value: parseEther("0.1"),
+            }
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys single listed bundle of ERC721+ERC1155 by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
+
+        const offer = [
+          getTestItem721(erc721Id),
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User buys listed ERC721 with ETH and swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value.div(2),
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ],
+            {
+              value: value.div(2),
+            }
+          );
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User batch buys ERC721+ERC1155 in seperate listings by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
+
+        // order0: 1 ERC721 for 1ETH+.1ETH Fee
+        const offer0 = [getTestItem721(erc721Id)];
+
+        const consideration0 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order0,
+          orderHash: orderHash0,
+          value: value0,
+        } = await createOrder(
+          seller,
+          zone,
+          offer0,
+          consideration0,
+          0 // FULL_OPEN
+        );
+
+        // order1: 1 ERC1155 for 1ETH+.1ETH Fee
+        const offer1 = [
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
+
+        const consideration1 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order1,
+          orderHash: orderHash1,
+          value: value1,
+        } = await createOrder(
+          seller,
+          zone,
+          offer1,
+          consideration1,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        const offerComponents = [[[0, 0]], [[1, 0]]].map(
+          toFulfillmentComponents
+        );
+
+        const considerationComponents = [
+          [
+            [0, 0],
+            [1, 0],
+          ],
+          [
+            [0, 1],
+            [1, 1],
+          ],
+        ].map(toFulfillmentComponents);
+
+        const totalValue = value0.add(value1);
+
+        await withBalanceChecks([order0, order1], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: totalValue,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  totalValue, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
+                totalValue,
+                encodeFulfillAvailableAdvancedOrdersParams(
+                  [order0, order1],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(false),
+                  buyer.address,
+                  2
+                ),
+                true,
+              ]),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order: order0,
+              orderHash: orderHash0,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+            {
+              order: order1,
+              orderHash: orderHash1,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User batch buys ERC721+ERC1155 in seperate listings with ETH and swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 + 1ERC1155 at price of 1ETH + .1ETH fee
+        const erc721Id = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const { nftId: erc1155Id, amount: erc1155Amount } =
+          await mintAndApprove1155(seller, marketplaceContract.address, 1);
+
+        // order0: 1 ERC721 for 1ETH+.1ETH Fee
+        const offer0 = [getTestItem721(erc721Id)];
+
+        const consideration0 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order0,
+          orderHash: orderHash0,
+          value: value0,
+        } = await createOrder(
+          seller,
+          zone,
+          offer0,
+          consideration0,
+          0 // FULL_OPEN
+        );
+
+        // order1: 1 ERC1155 for 1ETH+.1ETH Fee
+        const offer1 = [
+          getTestItem1155(erc1155Id, erc1155Amount, erc1155Amount),
+        ];
+
+        const consideration1 = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const {
+          order: order1,
+          orderHash: orderHash1,
+          value: value1,
+        } = await createOrder(
+          seller,
+          zone,
+          offer1,
+          consideration1,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        const offerComponents = [[[0, 0]], [[1, 0]]].map(
+          toFulfillmentComponents
+        );
+
+        const considerationComponents = [
+          [
+            [0, 0],
+            [1, 0],
+          ],
+          [
+            [0, 1],
+            [1, 1],
+          ],
+        ].map(toFulfillmentComponents);
+
+        const totalValue = value0.add(value1);
+
+        await withBalanceChecks([order0, order1], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: totalValue.div(2),
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  totalValue.div(2), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfillBatch", [
+                totalValue,
+                encodeFulfillAvailableAdvancedOrdersParams(
+                  [order0, order1],
+                  [],
+                  offerComponents,
+                  considerationComponents,
+                  toKey(false),
+                  buyer.address,
+                  2
+                ),
+                true,
+              ]),
+            ],
+            {
+              value: totalValue.div(2),
+            }
+          );
+
+          const receipt = await (await tx).wait();
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order: order0,
+              orderHash: orderHash0,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+            {
+              order: order1,
+              orderHash: orderHash1,
+              fulfiller: buyer.address,
+              receipt: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("Excess ETH is refunded when buying listed ERC721 by swapping ERC20 -> ETH", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        const buyerETHBalanceBefore = await provider.getBalance(buyer.address);
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value.add(42069),
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value.add(42069), // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const buyerETHBalanceAfter = await provider.getBalance(buyer.address);
+
+          expect(
+            buyerETHBalanceAfter.sub(buyerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice.mul(receipt.gasUsed).sub(42069).toString()
+          );
+
+          await checkExpectedEvents(tx, receipt, [
+            {
+              order,
+              orderHash,
+              fulfiller: buyer.address,
+            },
+          ]);
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> ETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactIn",
+                [
+                  {
+                    tokenIn: testERC20.address,
+                    amountIn: parseEther("1"),
+                    amountOutMinimum: BigNumber.from(0),
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                tridentPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              tridentPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amountOut)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC721 and swaps ERC20 -> WETH", async () => {
+        const nftId = await mintAndApprove721(seller, shoyuContract.address);
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC721 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem721(nftId, 1, 1, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // seller fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerWETHBalanceBefore = await testWETH.balanceOf(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC721From",
+                [
+                  testERC721.address,
+                  shoyuContract.address,
+                  nftId,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC721.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactIn",
+                [
+                  {
+                    tokenIn: testERC20.address,
+                    amountIn: 0,
+                    amountOutMinimum: BigNumber.from(0),
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          seller.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                tridentPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              tridentPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          const sellerWETHBalanceAfter = await testWETH.balanceOf(
+            seller.address
+          );
+
+          expect(
+            sellerWETHBalanceAfter.sub(sellerWETHBalanceBefore).toString()
+          ).to.eq(swapEvent.amountOut.toString());
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: consideration[0],
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("User accepts offer on ERC1155 and swaps ERC20 -> ETH", async () => {
+        const { nftId, amount } = await mintAndApprove1155(
+          seller,
+          shoyuContract.address
+        );
+
+        await mintAndApproveERC20(
+          buyer,
+          marketplaceContract.address,
+          parseEther("5")
+        );
+
+        // buyer creates offer for 1ERC1155 at price of 1ERC20 + .1ERC20 fee
+        const offer = [getTestItem20(parseEther("1.1"), parseEther("1.1"))];
+
+        const consideration = [
+          getTestItem1155(nftId, amount, amount, undefined, buyer.address),
+          getTestItem20(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        const { order, orderHash } = await createOrder(
+          buyer,
+          zone,
+          offer,
+          consideration,
+          0 // FULL_OPEN
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        const sellerETHBalanceBefore = await provider.getBalance(
+          seller.address
+        );
+
+        await withBalanceChecks([order], 0, null, async () => {
+          const tx = shoyuContract.connect(seller).cook(
+            [0, 1, 0, 0],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "transferERC1155From",
+                [
+                  testERC1155.address,
+                  shoyuContract.address,
+                  nftId,
+                  amount,
+                  TokenSource.WALLET,
+                  "0x",
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData(
+                "approveBeforeFulfill",
+                [
+                  [testERC1155.address],
+                  0,
+                  encodeFulfillAdvancedOrderParams(
+                    order,
+                    [],
+                    toKey(false),
+                    shoyuContract.address
+                  ),
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactIn",
+                [
+                  {
+                    tokenIn: testERC20.address,
+                    amountIn: 0,
+                    amountOutMinimum: BigNumber.from(0),
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  0, // amount
+                  seller.address, // to
+                ]
+              ),
+            ]
+          );
+
+          const receipt = await (await tx).wait();
+
+          const swapEvent = receipt.events
+            .filter((event: any) => {
+              try {
+                tridentPoolInterface.decodeEventLog(
+                  "Swap",
+                  event.data,
+                  event.topics
+                );
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((event: any) =>
+              tridentPoolInterface.decodeEventLog(
+                "Swap",
+                event.data,
+                event.topics
+              )
+            )[0];
+
+          const sellerETHBalanceAfter = await provider.getBalance(
+            seller.address
+          );
+
+          expect(
+            sellerETHBalanceAfter.sub(sellerETHBalanceBefore).abs().toString()
+          ).to.eq(
+            receipt.effectiveGasPrice
+              .mul(receipt.gasUsed)
+              .sub(swapEvent.amountOut)
+              .abs()
+              .toString()
+          );
+
+          await checkExpectedEvents(
+            tx,
+            receipt,
+            [
+              {
+                order,
+                orderHash,
+                fulfiller: shoyuContract.address,
+              },
+            ],
+            [
+              {
+                item: { ...consideration[0], amount },
+                offerer: shoyuContract.address,
+                conduitKey: toKey(false),
+                operator: marketplaceContract.address,
+              },
+            ]
+          );
+
+          return receipt;
+        });
+      });
+
+      it("Reverts if order cannot be filled after swapping", async () => {
+        // seller creates listing for 1ERC721 at price of 1ETH + .1ETH fee
+        const nftId = await mintAndApprove721(
+          seller,
+          marketplaceContract.address
+        );
+
+        const offer = [getTestItem721(nftId)];
+
+        const consideration = [
+          getItemETH(parseEther("1"), parseEther("1"), seller.address),
+          getItemETH(parseEther(".1"), parseEther(".1"), zone.address),
+        ];
+
+        // order is expired
+        const { order, orderHash, value } = await createOrder(
+          seller,
+          zone,
+          offer,
+          consideration,
+          0, // FULL_OPEN
+          [],
+          "EXPIRED"
+        );
+
+        // buyer fills order through Shoyu contract
+        // and swaps ERC20 for ETH before filling the order
+        await mintAndApproveERC20(
+          buyer,
+          shoyuContract.address,
+          parseEther("5")
+        );
+
+        await expect(
+          shoyuContract.connect(buyer).cook(
+            [0, 0, 1],
+            [
+              transformationAdapter.interface.encodeFunctionData(
+                "tridentSwapExactOut",
+                [
+                  {
+                    tokenOut: testWETH.address,
+                    amountOut: value,
+                    amountInMaximum: MaxUint256,
+                    path: [
+                      {
+                        pool: testWETHERC20Pool.address,
+                        data: encodedSwapData(
+                          testERC20.address,
+                          shoyuContract.address,
+                          true
+                        ),
+                      },
+                    ],
+                  },
+                  TokenSource.WALLET, // tokenSource
+                  "0x", // transferData
+                ]
+              ),
+              transformationAdapter.interface.encodeFunctionData(
+                "unwrapNativeToken",
+                [
+                  value, // amount
+                  shoyuContract.address, // to
+                ]
+              ),
+              seaportAdapter.interface.encodeFunctionData("fulfill", [
+                value,
+                encodeFulfillAdvancedOrderParams(
+                  order,
+                  [],
+                  toKey(false),
+                  buyer.address
+                ),
+              ]),
+            ]
+          )
+        ).to.be.reverted;
+      });
     });
   });
 });

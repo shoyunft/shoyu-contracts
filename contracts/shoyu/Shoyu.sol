@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@rari-capital/solmate/src/tokens/ERC20.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
 import "@rari-capital/solmate/src/tokens/ERC1155.sol";
-import "./lib/AdapterRegistry.sol";
+import "./adapters/AdapterRegistry.sol";
 
 contract Shoyu is Ownable, Pausable, ReentrancyGuard {
     AdapterRegistry public immutable adapterRegistry;
