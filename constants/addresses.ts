@@ -12,11 +12,10 @@ export const SEAPORT_ADDRESS_1_1: { [chainId: number]: string } = {
   [ChainId.GÖRLI]: "0x00000000006c3852cbEf3e08E8dF289169EdE581",
 };
 
-// TODO
 export const SEAPORT_ADDRESS_1_2: { [chainId: number]: string } = {
-  [ChainId.ETHEREUM]: "",
-  [ChainId.RINKEBY]: "",
-  [ChainId.GÖRLI]: "",
+  [ChainId.ETHEREUM]: "0x00000000000006c7676171937C444f6BDe3D6282",
+  [ChainId.RINKEBY]: "0x00000000000006c7676171937C444f6BDe3D6282",
+  [ChainId.GÖRLI]: "0x00000000000006c7676171937C444f6BDe3D6282",
 };
 
 export const SEAPORT_ADDRESS = SEAPORT_ADDRESS_1_1;
