@@ -9460,9 +9460,9 @@ scuffed-abi@^1.0.4:
   resolved "https://registry.yarnpkg.com/scuffed-abi/-/scuffed-abi-1.0.4.tgz#bc88129877856de5026d8afaea49de9a1972b6cf"
   integrity sha512-1NN2L1j+TMF6+/J2jHcAnhPH8Lwaqu5dlgknZPqejEVFQ8+cvcnXYNbaHtGEXTjSNrQLBGePXicD4oFGqecOnQ==
 
-"seaport@git+https://github.com/ProjectOpenSea/seaport.git#11c74c9af4020ff287fee8ca791798984bdbf8bd":
+"seaport@git+https://github.com/ProjectOpenSea/seaport.git#3222948aa91c3b89b3935b4043ec8b9d9b0ccb6a":
   version "1.2.0"
-  resolved "git+https://github.com/ProjectOpenSea/seaport.git#11c74c9af4020ff287fee8ca791798984bdbf8bd"
+  resolved "git+https://github.com/ProjectOpenSea/seaport.git#3222948aa91c3b89b3935b4043ec8b9d9b0ccb6a"
   dependencies:
     "@nomicfoundation/hardhat-network-helpers" "^1.0.7"
     ethers "^5.5.3"

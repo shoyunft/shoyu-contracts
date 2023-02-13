@@ -45,7 +45,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "readline-sync": "^1.4.10",
     "scuffed-abi": "^1.0.4",
-    "seaport": "git+https://github.com/ProjectOpenSea/seaport.git#11c74c9af4020ff287fee8ca791798984bdbf8bd",
+    "seaport": "git+https://github.com/ProjectOpenSea/seaport.git#3222948aa91c3b89b3935b4043ec8b9d9b0ccb6a",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.21",
     "ts-node": "^10.4.0",
