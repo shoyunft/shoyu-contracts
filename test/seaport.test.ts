@@ -277,12 +277,12 @@ describe("[SEAPORT] Tests", function () {
           {
             order,
             orderHash,
-            fulfiller: constants.AddressZero,
+            fulfiller: owner.address,
           },
           {
             order: mirrorOrder,
             orderHash: mirrorOrderHash,
-            fulfiller: constants.AddressZero,
+            fulfiller: owner.address,
           },
         ],
         executions
