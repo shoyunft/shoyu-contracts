@@ -27,7 +27,7 @@ import {
 const { orderType } = require("../../../eip-712-types/order");
 const deployConstants = require("../../../constants/constants");
 
-const VERSION = !process.env.REFERENCE ? "1.2" : "rc.1.2";
+const VERSION = !process.env.REFERENCE ? "1.4" : "rc.1.4";
 
 export const marketplaceFixture = async (
   create2Factory: ImmutableCreate2FactoryInterface,
